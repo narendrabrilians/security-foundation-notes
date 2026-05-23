@@ -35,15 +35,6 @@ Urutan ini dipilih karena security yang kuat butuh fondasi infrastruktur. Networ
 - Saat troubleshooting, mulai dari scope, waktu kejadian, dependency, log, dan perubahan terakhir.
 - Saat hardening, pastikan control tidak memutus kebutuhan operasional.
 
-## Notes
+## Thanks
 
-Catatan ini akan terus berkembang. Topik lanjutan yang cocok ditambahkan berikutnya:
-
-- `SOC.md`
-- `DFIR.md`
-- `Cloud-Security.md`
-- `Application-Security.md`
-- `Detection-Engineering.md`
-- `Threat-Hunting.md`
-
-Semua contoh command ditulis untuk pembelajaran dan lab yang sah. Gunakan hanya pada sistem yang kamu miliki atau yang memang kamu diberi izin untuk kelola.
+Terima kasih sudah membaca. Semoga catatan ini membantu proses belajar dan membangun fondasi security dengan lebih rapi.
