@@ -1,6 +1,6 @@
 # Security
 
-Catatan security pribadi untuk belajar serius, praktik lab, operasi harian, dan referensi kerja sebagai security engineer.
+Catatan security pribadi untuk belajar serius, praktik lab, dan membangun fondasi security.
 
 Catatan ini disusun sebagai baseline security yang lengkap dan praktis: cara memahami risiko, mengamankan sistem, membaca log, melakukan triage, mengelola vulnerability, dan menjalankan incident response dengan bukti.
 

@@ -1,6 +1,6 @@
 # Windows Server
 
-Catatan Windows Server pribadi untuk belajar serius, praktik lab, operasi harian, dan referensi kerja sebagai system administrator atau security engineer.
+Catatan Windows Server pribadi untuk belajar serius, praktik lab, dan membangun fondasi administrasi Windows Server.
 
 Fokus halaman ini adalah Windows Server sebagai platform infrastruktur: bagaimana server dibangun, dikelola, diamankan, dimonitor, dan dipulihkan. Active Directory hanya dibahas sebagai jembatan karena pembahasan domain controller, Kerberos domain, Group Policy, replication, FSMO, trusts, dan AD security lebih rapi dibuat di `Active-Directory.md`.
 

@@ -1,6 +1,6 @@
 # Active Directory
 
-Catatan Active Directory pribadi untuk belajar serius, praktik lab, operasi harian, troubleshooting, dan referensi kerja sebagai system administrator atau security engineer.
+Catatan Active Directory pribadi untuk belajar serius, praktik lab, troubleshooting, dan membangun fondasi identity berbasis domain.
 
 Fokus halaman ini adalah Active Directory Domain Services sebagai identity backbone: domain, forest, domain controller, DNS, Kerberos, LDAP, OU, group, GPO, replication, delegation, backup/restore, dan security operations.
 

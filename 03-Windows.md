@@ -1,6 +1,6 @@
 # Windows
 
-Catatan Windows pribadi untuk belajar serius, praktik lab, dan referensi kerja sebagai system administrator.
+Catatan Windows pribadi untuk belajar serius, praktik lab, dan membangun fondasi administrasi Windows.
 
 Fokus halaman ini adalah Windows client dan administrasi host. Active Directory dibahas hanya sebagai konteks singkat; pembahasan domain controller, GPO, Kerberos domain, replication, FSMO, dan AD security sebaiknya dibuat di `Active-Directory.md` setelah dasar Windows dan Windows Server matang.
 

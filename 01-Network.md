@@ -1,20 +1,18 @@
 # Network
 
-Catatan networking pribadi untuk belajar serius, praktik lab, dan referensi kerja sebagai system administrator atau network engineer.
+Catatan networking pribadi untuk belajar serius, praktik lab, dan membangun fondasi network yang kuat.
 
-Coverage dasar mengikuti CompTIA Network+ N10-009, tetapi level pembahasan diarahkan ke operasional senior, troubleshooting berbasis bukti, dan pemahaman low-level.
-
-Sumber objective resmi: https://comptiacdn.azureedge.net/webcontent/docs/default-source/exam-objectives/comptia-network-n10-009-exam-objectives-%284-0%29-%281%29.pdf
+Pembahasan diarahkan ke pemahaman konsep, praktik hands-on, troubleshooting berbasis bukti, dan detail low-level yang sering dibutuhkan saat menganalisis jaringan.
 
 Area utama:
 
-| Domain | Bobot |
-|---|---:|
-| 1.0 Networking Concepts | 23% |
-| 2.0 Network Implementation | 20% |
-| 3.0 Network Operations | 19% |
-| 4.0 Network Security | 14% |
-| 5.0 Network Troubleshooting | 24% |
+| Area | Cakupan |
+|---|---|
+| Networking Concepts | OSI/TCP-IP, protocol, port, addressing, topology, cloud, dan traffic type |
+| Network Implementation | routing, switching, wireless, cabling, media, dan physical installation |
+| Network Operations | monitoring, documentation, change, disaster recovery, dan management access |
+| Network Security | segmentation, access control, attack patterns, secure management, dan defense |
+| Network Troubleshooting | methodology, packet path, service failure, performance, dan tools |
 
 ## Daftar Isi
 
