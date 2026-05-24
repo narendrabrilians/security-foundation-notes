@@ -1047,7 +1047,7 @@ npm audit
 
 ```powershell
 # Cari secret pattern sederhana di folder project dengan PowerShell.
-Select-String -Path .\* -Pattern "api_key|secret|password|token" -Recurse
+Get-ChildItem -Recurse -File | Select-String -Pattern "api_key|secret|password|token"
 
 # Test endpoint HTTPS aplikasi.
 Test-NetConnection example.com -Port 443

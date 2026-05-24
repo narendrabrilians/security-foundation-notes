@@ -145,6 +145,288 @@ Detail tiap layer:
 | 2 | Data Link | Frame | MAC address, VLAN ID | switch, bridge, AP | Ethernet, 802.1Q, ARP, STP, Wi-Fi MAC | VLAN, MAC table, ARP, trunk, STP |
 | 1 | Physical | Bits | signal, pin, wavelength, frequency | cable, transceiver, repeater | copper, fiber, RF, SFP | link light, speed, duplex, signal, cable |
 
+Penjelasan per layer:
+
+#### Layer 7 - Application
+
+Layer 7 adalah layer yang paling dekat dengan aplikasi. Di sini data sudah punya makna untuk aplikasi, misalnya request HTTP, query DNS, command SMTP, operasi LDAP, atau request SMB.
+
+Layer ini tidak berarti "aplikasi browser" secara literal, tetapi protocol aplikasi yang dipakai browser atau program. Browser memakai HTTP/HTTPS. Mail client memakai SMTP/IMAP. Domain lookup memakai DNS. File sharing Windows memakai SMB.
+
+PDU di Layer 7 biasanya disebut `data` atau `message`, tergantung protocol.
+
+Contoh bentuk HTTP request:
+
+```text
+GET /index.html HTTP/1.1
+Host: example.com
+User-Agent: curl/8.x
+Accept: */*
+```
+
+Contoh bentuk DNS query secara konseptual:
+
+```text
+DNS Query
+  Transaction ID: 0x1234
+  Flags: standard query
+  Question: www.example.com
+  Type: A
+  Class: IN
+```
+
+Yang penting dicek di Layer 7:
+
+- apakah nama domain resolve ke IP yang benar
+- apakah HTTP status code benar, misalnya `200`, `301`, `403`, `404`, `500`
+- apakah aplikasi menolak karena authentication/authorization
+- apakah API path, method, header, atau payload benar
+- apakah proxy/WAF/load balancer mengubah request
+
+#### Layer 6 - Presentation
+
+Layer 6 mengatur bagaimana data direpresentasikan agar bisa dipahami kedua sisi. Contohnya encoding, serialization, compression, dan encryption/decryption.
+
+Di network modern, Layer 6 sering terasa saat troubleshooting TLS. Aplikasi bisa benar, port bisa terbuka, tetapi koneksi tetap gagal karena certificate expired, hostname tidak match, cipher suite tidak cocok, atau client tidak trust CA.
+
+PDU Layer 6 juga biasanya disebut `data`, tetapi bentuknya bisa berupa data yang sudah di-encode, compressed, atau encrypted.
+
+Contoh bentuk TLS record secara konseptual:
+
+```text
+TLS Record
+  Content Type: Handshake / Application Data
+  Version: TLS 1.2 or TLS 1.3
+  Length: ...
+  Encrypted Application Data: ...
+```
+
+Contoh masalah Layer 6:
+
+| Gejala | Kemungkinan |
+|---|---|
+| certificate warning | expired cert, wrong SAN, untrusted CA |
+| TLS handshake failed | cipher mismatch, protocol disabled |
+| data tidak terbaca | encoding/serialization salah |
+| HTTPS bisa dari browser A tapi gagal dari client lama | TLS version/cipher compatibility |
+
+#### Layer 5 - Session
+
+Layer 5 mengatur sesi komunikasi: kapan sesi dibuat, dipertahankan, dipulihkan, atau ditutup. Dalam praktik modern, fungsi session sering digabung ke aplikasi, library, framework, atau protocol tertentu.
+
+Contoh session:
+
+| Contoh | Bentuk Session |
+|---|---|
+| login web | cookie/session ID/JWT |
+| SMB session | authenticated file sharing session |
+| RPC session | binding dan context antar process |
+| database session | koneksi user ke database |
+
+PDU Layer 5 tetap disebut `data`, tetapi data itu membawa informasi state/session.
+
+Contoh bentuk session cookie di HTTP:
+
+```text
+HTTP/1.1 200 OK
+Set-Cookie: session_id=abc123; HttpOnly; Secure; SameSite=Lax
+```
+
+Yang dicek:
+
+- session timeout
+- cookie hilang atau tidak terkirim
+- load balancer tidak sticky padahal aplikasi butuh sticky session
+- user sudah login tapi server menganggap session invalid
+- reconnect gagal setelah network putus
+
+#### Layer 4 - Transport
+
+Layer 4 menghubungkan process ke process memakai port. IP hanya mengantar ke host, sedangkan port menentukan aplikasi/process mana yang menerima data.
+
+TCP bersifat connection-oriented. TCP punya handshake, sequence number, acknowledgment, retransmission, flow control, dan connection state. UDP connectionless; lebih ringan, tetapi reliability ditangani aplikasi jika diperlukan.
+
+PDU:
+
+| Protocol | PDU |
+|---|---|
+| TCP | segment |
+| UDP | datagram |
+
+Contoh bentuk TCP segment:
+
+```text
+TCP Segment
+  Source Port: 51544
+  Destination Port: 443
+  Sequence Number: 1000
+  Acknowledgment Number: 0
+  Flags: SYN
+  Window Size: 64240
+  Payload: optional application data
+```
+
+Contoh bentuk UDP datagram:
+
+```text
+UDP Datagram
+  Source Port: 53000
+  Destination Port: 53
+  Length: ...
+  Checksum: ...
+  Payload: DNS query
+```
+
+Yang dicek:
+
+- apakah port tujuan listening
+- apakah firewall drop/reject
+- apakah TCP handshake selesai
+- apakah ada retransmission atau reset
+- apakah UDP response kembali
+- apakah NAT mengubah port/source
+
+#### Layer 3 - Network
+
+Layer 3 mengatur logical addressing dan routing. Di sinilah IPv4/IPv6 bekerja. Router membaca destination IP dan menentukan next hop.
+
+PDU Layer 3 disebut `packet`.
+
+Contoh bentuk IPv4 packet:
+
+```text
+IPv4 Packet
+  Version: 4
+  Source IP: 192.168.1.10
+  Destination IP: 10.10.10.50
+  TTL: 64
+  Protocol: TCP
+  Payload: TCP segment
+```
+
+Contoh bentuk IPv6 packet:
+
+```text
+IPv6 Packet
+  Version: 6
+  Source IP: 2001:db8::10
+  Destination IP: 2001:db8::50
+  Hop Limit: 64
+  Next Header: TCP
+  Payload: TCP segment
+```
+
+Hal penting:
+
+- IP source/destination biasanya tetap end-to-end
+- NAT bisa mengubah IP source/destination
+- TTL/hop limit berkurang setiap melewati router
+- routing memilih next hop
+- subnet mask/prefix menentukan apakah tujuan local atau remote
+
+Yang dicek:
+
+- IP address dan prefix
+- default gateway
+- route table
+- ICMP reachability
+- asymmetric routing
+- NAT
+- ACL/firewall Layer 3
+
+#### Layer 2 - Data Link
+
+Layer 2 bekerja dalam satu broadcast domain atau satu link lokal. Ethernet frame memakai MAC address, bukan IP address. Switch mengambil keputusan forwarding berdasarkan MAC address table.
+
+PDU Layer 2 disebut `frame`.
+
+Contoh bentuk Ethernet frame:
+
+```text
+Ethernet Frame
+  Preamble: ...
+  Destination MAC: bb:bb:bb:bb:bb:bb
+  Source MAC: aa:aa:aa:aa:aa:aa
+  802.1Q VLAN Tag: optional
+  EtherType: IPv4 / IPv6 / ARP
+  Payload: IP packet or ARP message
+  FCS: frame check sequence
+```
+
+Jika VLAN tagging aktif, frame membawa tag 802.1Q:
+
+```text
+802.1Q Tag
+  TPID: 0x8100
+  PCP: priority
+  DEI: drop eligible
+  VLAN ID: 10
+```
+
+ARP juga berada di sekitar Layer 2/3 karena tugasnya memetakan IPv4 ke MAC address dalam local network.
+
+Contoh ARP:
+
+```text
+ARP Request
+  Who has 192.168.1.20?
+  Tell 192.168.1.10
+
+ARP Reply
+  192.168.1.20 is at bb:bb:bb:bb:bb:bb
+```
+
+Yang dicek:
+
+- VLAN access/trunk/native VLAN
+- MAC address table
+- ARP table
+- STP blocking/loop
+- port security
+- duplex mismatch
+- Wi-Fi association
+
+#### Layer 1 - Physical
+
+Layer 1 adalah sinyal fisik. Di sini belum ada IP, port, HTTP, atau DNS. Yang ada adalah bit yang dikirim sebagai electrical signal, light pulse, atau radio wave.
+
+PDU Layer 1 disebut `bits`.
+
+Contoh bentuk konseptual:
+
+```text
+Bits
+  01001000 01010100 01010100 01010000 ...
+
+Media
+  copper electrical signal
+  fiber light pulse
+  wireless radio frequency
+```
+
+Yang dicek:
+
+- kabel putus atau salah tipe
+- transceiver/SFP tidak cocok
+- light level fiber
+- Wi-Fi signal/RSSI/SNR
+- speed dan duplex negotiation
+- CRC/error counter
+- link light
+- power/PoE
+
+Ringkasan bentuk PDU:
+
+```text
+Layer 7 Application   : HTTP request, DNS message, SMTP command
+Layer 6 Presentation  : encoded/compressed/encrypted data, TLS record
+Layer 5 Session       : session data, cookie, RPC context
+Layer 4 Transport     : TCP segment or UDP datagram
+Layer 3 Network       : IP packet
+Layer 2 Data Link     : Ethernet frame
+Layer 1 Physical      : bits as signal
+```
+
 Cara data dibungkus saat dikirim:
 
 ```text
