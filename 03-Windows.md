@@ -1,6 +1,6 @@
 # Windows
 
-Catatan Windows pribadi untuk belajar serius, praktik lab, dan membangun fondasi administrasi Windows.
+Catatan Windows pribadi untuk belajar serius, praktik command, dan membangun fondasi administrasi Windows.
 
 Fokus halaman ini adalah Windows client dan administrasi host. Active Directory dibahas hanya sebagai konteks singkat; pembahasan domain controller, GPO, Kerberos domain, replication, FSMO, dan AD security sebaiknya dibuat di `Active-Directory.md` setelah dasar Windows dan Windows Server matang.
 
@@ -61,9 +61,6 @@ Area utama:
   - [7.8 WMI, CIM, WinRM, dan Remote Operations](#78-wmi-cim-winrm-dan-remote-operations)
   - [7.9 Crash Dump, Reliability, dan Driver Failure](#79-crash-dump-reliability-dan-driver-failure)
   - [7.10 Expert Troubleshooting Playbooks](#710-expert-troubleshooting-playbooks)
-- [Lab Checklist](#lab-checklist)
-- [Command Index Cepat](#command-index-cepat)
-- [Checklist Kesiapan Praktik](#checklist-kesiapan-praktik)
 
 ---
 
@@ -78,24 +75,32 @@ Saat belajar atau bekerja dengan Windows, jangan hanya menghafal menu GUI. Biasa
 - apakah masalah hanya terjadi pada satu user, satu komputer, atau semua komputer
 - apakah host standalone, workgroup, domain-joined, atau hybrid-managed
 
-Format command:
+Pola belajar di file ini:
 
-```powershell
-# Setiap command diberi komentar singkat.
-Get-Command
-```
-
-Lab minimum:
-
-- satu VM Windows 11
-- satu VM Windows Server untuk tahap berikutnya
-- snapshot sebelum eksperimen registry, service, permission, dan firewall
-- akses PowerShell sebagai user biasa dan administrator
-- tool bawaan: Event Viewer, Task Manager, Resource Monitor, Services, Windows Terminal
+- baca konsep singkat, lalu langsung jalankan command yang ada di section tersebut
+- sebelum melihat output atau membaca penjelasan lanjutan, prediksi dulu apa yang seharusnya terjadi
+- setelah command selesai, tulis observasi: output penting, gejala, layer/komponen yang terlibat, dan dugaan penyebab
+- ulangi praktik yang sama di hari berikutnya tanpa melihat catatan agar ingatan dibangun lewat recall
+- jalankan command hanya di sistem milik sendiri, lab pribadi, atau environment yang memang kamu diberi izin
 
 ---
 
 ## 1.0 Windows Fundamentals
+
+**Praktik setelah bab ini:** kenali OS, identity lokal, process, service, dan event dasar.
+
+```powershell
+# Tampilkan informasi versi Windows.
+Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, OsBuildNumber
+
+# Tampilkan user yang sedang login.
+whoami /all
+
+# Tampilkan process dengan penggunaan CPU terbesar.
+Get-Process | Sort-Object CPU -Descending | Select-Object -First 10
+```
+
+Catat: edition/build, SID, group membership, privilege token, process penting, dan service yang terkait.
 
 ### 1.1 Windows Client, Server, Workgroup, dan Domain
 
@@ -524,6 +529,21 @@ Get-ScheduledTask | Where-Object State -eq Ready
 ---
 
 ## 2.0 System Administration
+
+**Praktik setelah bab ini:** lakukan administrasi lokal dengan bukti sebelum dan sesudah perubahan.
+
+```powershell
+# Tampilkan local user.
+Get-LocalUser
+
+# Tampilkan local group administrator.
+Get-LocalGroupMember Administrators
+
+# Tampilkan service yang sedang berjalan.
+Get-Service | Where-Object Status -eq Running
+```
+
+Catat: object yang berubah, permission yang diberikan, service state sebelum/sesudah, dan event log yang membuktikan perubahan.
 
 ### 2.1 Local Users and Groups
 
@@ -962,6 +982,24 @@ pnputil /enum-drivers
 
 ## 3.0 Windows Networking
 
+**Praktik setelah bab ini:** buktikan DNS, route, interface, dan koneksi TCP dari host Windows.
+
+```powershell
+# Tampilkan konfigurasi IP lengkap.
+ipconfig /all
+
+# Query DNS record.
+Resolve-DnsName example.com
+
+# Test koneksi TCP ke HTTPS.
+Test-NetConnection example.com -Port 443
+
+# Tampilkan routing table.
+route print
+```
+
+Catat: DNS server, suffix, gateway, route yang dipilih, port reachability, dan apakah failure terjadi di DNS, route, firewall, atau service.
+
 ### 3.1 TCP/IP Configuration
 
 Windows networking memakai interface, IP address, route, DNS client, firewall profile, dan adapter binding.
@@ -1266,6 +1304,24 @@ Get-SmbOpenFile
 
 ## 4.0 Windows Security
 
+**Praktik setelah bab ini:** lihat security dari account, ACL, audit policy, firewall, dan Defender.
+
+```powershell
+# Tampilkan audit policy saat ini.
+auditpol /get /category:*
+
+# Tampilkan Windows Defender status.
+Get-MpComputerStatus
+
+# Tampilkan firewall profile.
+Get-NetFirewallProfile
+
+# Tampilkan ACL folder contoh.
+Get-Acl C:\Windows | Format-List
+```
+
+Catat: audit yang aktif, protection status, firewall profile, owner ACL, inheritance, dan permission yang terlalu luas.
+
 ### 4.1 Authentication, Tokens, dan Credential
 
 Windows security banyak bergantung pada SID, token, privilege, ACL, dan credential.
@@ -1520,6 +1576,21 @@ Get-NetFirewallRule -Direction Inbound -Enabled True
 ---
 
 ## 5.0 PowerShell
+
+**Praktik setelah bab ini:** gunakan PowerShell sebagai object pipeline, bukan sekadar shell teks.
+
+```powershell
+# Cari command terkait service.
+Get-Command *Service*
+
+# Lihat property object service.
+Get-Service | Get-Member
+
+# Filter service running lalu pilih field penting.
+Get-Service | Where-Object Status -eq Running | Select-Object Name, Status, StartType
+```
+
+Catat: object type, property yang tersedia, pipeline input/output, dan perbedaan object PowerShell dengan text output biasa.
 
 ### 5.1 Cmdlet, Object, Pipeline, dan Help
 
@@ -1783,6 +1854,21 @@ try {
 
 ## 6.0 Troubleshooting and Operations
 
+**Praktik setelah bab ini:** gabungkan event log, service state, performance counter, dan network test.
+
+```powershell
+# Ambil error System log terbaru.
+Get-WinEvent -FilterHashtable @{LogName='System'; Level=2} -MaxEvents 20
+
+# Cek service gagal atau stopped.
+Get-Service | Where-Object Status -eq Stopped
+
+# Melihat counter CPU dan memory dasar.
+Get-Counter '\Processor(_Total)\% Processor Time','\Memory\Available MBytes'
+```
+
+Catat: waktu error, event ID, service terdampak, resource pressure, dan tindakan validasi setelah perbaikan.
+
 ### 6.1 Event Logs and Evidence
 
 Saat troubleshooting Windows, kumpulkan bukti sebelum mengubah sistem.
@@ -2024,6 +2110,21 @@ Get-NetTCPConnection
 ---
 
 ## 7.0 Senior Deep Dive
+
+**Praktik setelah bab ini:** bedakan gejala user-level dari bukti OS-level.
+
+```powershell
+# Melihat process beserta command line lewat CIM.
+Get-CimInstance Win32_Process | Select-Object ProcessId, ParentProcessId, Name, CommandLine
+
+# Melihat koneksi TCP aktif.
+Get-NetTCPConnection
+
+# Melihat driver yang terpasang.
+Get-CimInstance Win32_SystemDriver | Select-Object Name, State, StartMode
+```
+
+Catat: parent-child process, command line mencurigakan, TCP state, driver state, dan bukti yang layak masuk timeline investigasi.
 
 ### 7.1 Windows Internals Overview
 
@@ -2722,148 +2823,3 @@ Get-NetTCPConnection -State Listen
 ```
 
 ---
-
-## Lab Checklist
-
-- Cek apakah host workgroup atau domain joined.
-- Buat local user dan local group.
-- Beri NTFS permission ke folder lab.
-- Buat SMB share dan uji akses.
-- Cek Event Viewer untuk logon gagal.
-- Restart service dan lihat event terkait.
-- Buat scheduled task sederhana.
-- Tambahkan IP static sementara dan rollback.
-- Flush DNS cache dan test `Resolve-DnsName`.
-- Enable PowerShell Remoting di VM lab.
-- Jalankan `sfc` dan `DISM` check.
-- Cek Defender status dan update signature.
-- Export local security policy.
-- Ambil baseline process, service, firewall rule, dan update.
-- Baca security descriptor folder dengan `Get-Acl` dan `icacls`.
-- Bandingkan token user biasa dan elevated dengan `whoami /all`.
-- Cari event logon type `2`, `3`, dan `10` di Security log.
-- Generate Windows Update log dengan `Get-WindowsUpdateLog`.
-- Query OS/process lewat CIM.
-- Buka Reliability Monitor dan cek crash/app failure.
-- Simulasikan service gagal start di VM lab dan buat runbook.
-- Gunakan ProcMon filter untuk mencari `ACCESS DENIED`.
-- Gunakan Autoruns untuk review startup location.
-
----
-
-## Command Index Cepat
-
-```powershell
-# Melihat informasi komputer.
-Get-ComputerInfo
-
-# Melihat user lokal.
-Get-LocalUser
-
-# Melihat group lokal.
-Get-LocalGroup
-
-# Melihat process.
-Get-Process
-
-# Melihat service.
-Get-Service
-
-# Melihat scheduled task.
-Get-ScheduledTask
-
-# Melihat disk.
-Get-Disk
-
-# Melihat volume.
-Get-Volume
-
-# Melihat IP address.
-Get-NetIPAddress
-
-# Melihat route.
-Get-NetRoute
-
-# Resolve DNS.
-Resolve-DnsName example.com
-
-# Test TCP port.
-Test-NetConnection example.com -Port 443
-
-# Melihat firewall profile.
-Get-NetFirewallProfile
-
-# Melihat event System terbaru.
-Get-WinEvent -LogName System -MaxEvents 20
-
-# Melihat Defender status.
-Get-MpComputerStatus
-
-# Melihat BitLocker status.
-Get-BitLockerVolume
-
-# Melihat PowerShell help.
-Get-Help Get-Service -Examples
-
-# Melihat ACL folder.
-Get-Acl C:\Data
-
-# Melihat ACL dengan icacls.
-icacls C:\Data
-
-# Melihat token dan privilege user.
-whoami /all
-
-# Melihat audit policy.
-auditpol /get /category:*
-
-# Melihat credential yang tersimpan.
-cmdkey /list
-
-# Melihat event failed logon.
-Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4625} -MaxEvents 10
-
-# Query OS lewat CIM.
-Get-CimInstance Win32_OperatingSystem
-
-# Cek image health.
-DISM /Online /Cleanup-Image /CheckHealth
-
-# Repair system files.
-sfc /scannow
-
-# Membuka Reliability Monitor.
-perfmon /rel
-
-# Melihat minidump jika ada.
-Get-ChildItem C:\Windows\Minidump -ErrorAction SilentlyContinue
-```
-
----
-
-## Checklist Kesiapan Praktik
-
-Catatan ini sudah berguna kalau kamu bisa:
-
-- membedakan Windows client, Windows Server, workgroup, domain, dan local account
-- menjelaskan boot flow Windows modern
-- membaca path penting seperti `System32`, `SysWOW64`, `ProgramData`, dan user profile
-- membaca dan backup registry key
-- mengelola process, service, dan scheduled task
-- membuat local user/group dan membaca group membership
-- menjelaskan NTFS permission, share permission, inheritance, deny, dan UAC
-- membaca disk, partition, volume, drive letter, dan BitLocker status
-- membaca IP, route, DNS cache, neighbor table, dan firewall profile
-- menguji port dengan `Test-NetConnection`
-- membaca event log penting seperti `4624`, `4625`, `7045`, `6008`
-- memakai PowerShell pipeline berbasis object
-- menjalankan basic repair dengan `sfc`, `DISM`, dan `chkdsk`
-- membuat incident note dengan scope, evidence, theory, action, validation, dan rollback
-- menjelaskan security descriptor, DACL, SACL, ACE, SID, privilege, dan integrity level
-- membedakan token user biasa, elevated admin, dan service context
-- membaca logon type Windows dan event authentication penting
-- memahami LSASS, SAM, DPAPI, Credential Manager, dan credential protection secara konseptual
-- memahami component store, CBS, DISM, SFC, dan Windows Update log
-- memakai WMI/CIM untuk inventory dan troubleshooting remote
-- mengumpulkan evidence BSOD dari minidump, event `1001`, event `6008`, dan Reliability Monitor
-- memakai Sysinternals secara metodis: Process Explorer, ProcMon, Autoruns, TCPView

@@ -1,6 +1,6 @@
 # Network
 
-Catatan networking pribadi untuk belajar serius, praktik lab, dan membangun fondasi network yang kuat.
+Catatan networking pribadi untuk belajar serius, praktik command, dan membangun fondasi network yang kuat.
 
 Pembahasan diarahkan ke pemahaman konsep, praktik hands-on, troubleshooting berbasis bukti, dan detail low-level yang sering dibutuhkan saat menganalisis jaringan.
 
@@ -22,6 +22,7 @@ Area utama:
   - [1.2 Network Appliances, Applications, and Functions](#12-network-appliances-applications-and-functions)
   - [1.3 Cloud Concepts](#13-cloud-concepts)
   - [1.4 Ports, Protocols, Services, and Traffic Types](#14-ports-protocols-services-and-traffic-types)
+  - [1.4.1 TCP, UDP, Flags, and Handshake](#141-tcp-udp-flags-and-handshake)
   - [1.5 Transmission Media and Transceivers](#15-transmission-media-and-transceivers)
   - [1.6 Network Topologies, Architectures, and Types](#16-network-topologies-architectures-and-types)
   - [1.7 IPv4 Network Addressing](#17-ipv4-network-addressing)
@@ -55,9 +56,6 @@ Area utama:
   - [6.4 Routing, ARP/ND, dan Failure Domain](#64-routing-arpnd-dan-failure-domain)
   - [6.5 Observability, Packet Capture, dan Incident Workflow](#65-observability-packet-capture-dan-incident-workflow)
   - [6.6 Performance Engineering dan Capacity Planning](#66-performance-engineering-dan-capacity-planning)
-- [Lab Checklist](#lab-checklist)
-- [Command Index Cepat](#command-index-cepat)
-- [Checklist Kesiapan Praktik](#checklist-kesiapan-praktik)
 
 ---
 
@@ -88,24 +86,35 @@ Prinsip catatan senior:
 - Untuk setiap incident, cari `source`, `destination`, `protocol`, `port`, `state`, `path`, dan `last change`.
 - Untuk setiap fix, siapkan validasi dan rollback.
 
-Lab minimum:
+Pola belajar di file ini:
 
-- satu PC/laptop dengan Wireshark
-- dua VM Linux
-- satu router/firewall virtual, misalnya pfSense/OPNsense atau Linux router
-- satu switch virtual atau lab simulator
-- akses ke command `ping`, `traceroute`, `dig`, `nslookup`, `tcpdump`, `nmap`
-
-Format command:
-
-```bash
-# Setiap command diberi komentar singkat.
-command
-```
+- baca konsep singkat, lalu langsung jalankan command yang ada di section tersebut
+- sebelum melihat output atau membaca penjelasan lanjutan, prediksi dulu apa yang seharusnya terjadi
+- setelah command selesai, tulis observasi: output penting, gejala, layer/komponen yang terlibat, dan dugaan penyebab
+- ulangi praktik yang sama di hari berikutnya tanpa melihat catatan agar ingatan dibangun lewat recall
+- jalankan command hanya di sistem milik sendiri, lab pribadi, atau environment yang memang kamu diberi izin
 
 ---
 
 ## 1.0 Networking Concepts
+
+**Praktik setelah bab ini:** buktikan konsep layer, IP, DNS, dan port dengan traffic nyata.
+
+```bash
+# Melihat IP address dan interface lokal.
+ip addr show
+
+# Melihat default route yang dipakai host.
+ip route show
+
+# Query DNS untuk melihat name resolution.
+dig example.com
+
+# Melihat HTTP/TLS dari sisi application layer.
+curl -v https://example.com/
+```
+
+Catat: source IP, destination IP, port, protocol, DNS answer, route yang dipilih, dan layer mana yang sedang kamu buktikan.
 
 Bagian ini membahas fondasi: OSI model, device, cloud, protocol, media, topology, IPv4, dan konsep network modern.
 
@@ -830,17 +839,18 @@ Port penting:
 | SNMP | 161/162 | UDP | monitoring dan trap |
 | BGP | 179 | TCP | routing antar autonomous system |
 | LDAP | 389 | TCP/UDP | directory service |
-| HTTPS | 443 | TCP | web terenkripsi |
+| HTTPS | 443 | TCP/UDP | web terenkripsi; UDP umum untuk HTTP/3/QUIC |
 | SMB | 445 | TCP | file sharing |
+| SMTPS/submissions | 465 | TCP | mail submission dengan implicit TLS |
 | Syslog | 514 | UDP/TCP | log forwarding |
-| SMTPS/submission | 587 | TCP | secure mail submission |
+| SMTP submission | 587 | TCP | mail submission, biasanya STARTTLS |
 | LDAPS | 636 | TCP | LDAP over TLS |
 | SQL Server | 1433 | TCP | Microsoft SQL Server |
 | RADIUS | 1812/1813 | UDP | AAA authentication/accounting |
 | NFS | 2049 | TCP/UDP | network file system |
 | RDP | 3389 | TCP/UDP | remote desktop |
-| SRTP | 5004/5005 | UDP | secure RTP media |
-| SIP | 5060/5061 | UDP/TCP/TLS | VoIP signaling |
+| RTP/SRTP | dynamic, sering 5004/5005 | UDP | voice/video media |
+| SIP/SIPS | 5060, 5061 | UDP/TCP, TCP/TLS | VoIP signaling |
 
 Protocol category:
 
@@ -877,7 +887,9 @@ IKE negotiation
 -> tunnel atau transport mode membawa packet
 ```
 
-TCP vs UDP:
+### 1.4.1 TCP, UDP, Flags, and Handshake
+
+TCP dan UDP sama-sama berada di Layer 4, tetapi cara kerjanya berbeda. TCP membuat koneksi dan menjaga urutan data. UDP tidak membuat koneksi, sehingga lebih ringan tetapi tidak memberi jaminan delivery dari protocol itu sendiri.
 
 | Protocol | Karakter | Cocok Untuk |
 |---|---|---|
@@ -1882,6 +1894,24 @@ Hands-on checklist:
 
 ## 2.0 Network Implementation
 
+**Praktik setelah bab ini:** ubah konsep routing/switching menjadi bukti forwarding path.
+
+```bash
+# Melihat route yang dipilih kernel untuk destination tertentu.
+ip route get 8.8.8.8
+
+# Melihat neighbor table untuk ARP/ND.
+ip neigh show
+
+# Membuat VLAN subinterface sementara untuk memahami 802.1Q di Linux.
+sudo ip link add link eth0 name eth0.10 type vlan id 10
+
+# Melihat VLAN subinterface yang dibuat.
+ip -d link show eth0.10
+```
+
+Catat: gateway, next-hop, interface keluar, MAC neighbor, VLAN ID, dan perbedaan antara routing Layer 3 dan tagging Layer 2.
+
 Bagian ini membahas routing, switching, wireless, dan instalasi fisik.
 
 ### 2.1 Routing Technologies
@@ -2057,6 +2087,33 @@ VLAN:
 | Voice VLAN | VLAN khusus VoIP phone |
 | SVI | interface VLAN untuk routing/management |
 
+VLAN atau Virtual LAN memecah satu switch fisik menjadi beberapa broadcast domain logis. Tanpa VLAN, semua host pada switch yang sama cenderung berada dalam satu broadcast domain. Dengan VLAN, user, server, voice, guest, dan management network bisa dipisah walaupun melewati perangkat fisik yang sama.
+
+Yang penting: VLAN bukan firewall. VLAN memisahkan broadcast domain Layer 2, tetapi jika ada routing antar VLAN tanpa policy, host di VLAN berbeda tetap bisa saling akses lewat gateway. Security boundary yang sebenarnya biasanya dibuat dengan ACL, firewall, private VLAN, NAC, atau policy routing.
+
+Broadcast domain:
+
+| Item | Dampak |
+|---|---|
+| Broadcast ARP | hanya tersebar dalam VLAN yang sama |
+| DHCP Discover | hanya tersebar dalam VLAN yang sama kecuali ada DHCP relay |
+| MAC table | switch belajar MAC per VLAN |
+| STP | bisa berjalan per VLAN tergantung implementasi |
+| Failure domain | loop/broadcast storm bisa terbatas pada VLAN tertentu |
+
+Contoh sederhana:
+
+```text
+Switch fisik yang sama
+
+Port 1-10  -> VLAN 10 Users
+Port 11-15 -> VLAN 20 Voice
+Port 16-20 -> VLAN 30 Servers
+Port 21-24 -> VLAN 99 Management
+```
+
+Jika host di VLAN 10 ingin bicara dengan server di VLAN 30, traffic harus keluar dari Layer 2 domain VLAN 10 menuju gateway Layer 3, lalu dirutekan ke VLAN 30.
+
 Inter-VLAN routing:
 
 | Metode | Arti |
@@ -2098,11 +2155,88 @@ Access port vs trunk:
 | Access | satu VLAN | frame biasanya untagged |
 | Trunk | banyak VLAN | frame biasanya tagged 802.1Q |
 
+Access port biasanya terhubung ke endpoint seperti laptop, printer, camera, atau IP phone. Frame yang keluar ke endpoint biasanya tidak punya VLAN tag. Switch menambahkan konteks VLAN secara internal berdasarkan konfigurasi port.
+
+Trunk port biasanya menghubungkan switch ke switch, switch ke router, switch ke firewall, switch ke hypervisor, atau switch ke access point. Trunk membawa banyak VLAN dalam satu link fisik dengan tag 802.1Q.
+
+Frame pada access port:
+
+```text
+Endpoint -> Switch access port VLAN 10
+
+Ethernet Frame
+  Destination MAC: gateway/user/server
+  Source MAC: endpoint
+  EtherType: IPv4
+  Payload: IP packet
+
+Switch menerima frame itu sebagai bagian dari VLAN 10 karena port dikonfigurasi access VLAN 10.
+```
+
+Frame pada trunk:
+
+```text
+Switch A -> Switch B trunk
+
+Ethernet Frame
+  Destination MAC: ...
+  Source MAC: ...
+  802.1Q Tag:
+    VLAN ID: 10
+    PCP: priority
+    DEI: drop eligible
+  EtherType: IPv4
+  Payload: IP packet
+```
+
+Perbandingan:
+
+| Situasi | Access | Trunk |
+|---|---|---|
+| Endpoint biasa | ya | tidak |
+| Antar switch | tidak | ya |
+| Hypervisor host dengan banyak VM VLAN | kadang | ya |
+| AP dengan banyak SSID | tidak | ya |
+| Firewall/router subinterface | tidak | ya |
+
 Native VLAN:
 
 - Native VLAN adalah VLAN untagged pada trunk.
 - Native VLAN mismatch bisa menyebabkan traffic masuk VLAN salah.
 - Best practice: jangan pakai VLAN 1 sebagai native VLAN untuk user traffic.
+
+Native VLAN detail:
+
+```text
+Trunk link:
+  VLAN 10 tagged
+  VLAN 20 tagged
+  VLAN 99 tagged
+  Native VLAN untagged
+```
+
+Jika Switch A menganggap native VLAN adalah 999, tetapi Switch B menganggap native VLAN adalah 1, frame untagged yang melewati trunk bisa masuk broadcast domain yang salah. Ini bisa menyebabkan gejala aneh: DHCP salah, device muncul di subnet salah, atau traffic management bocor ke VLAN default.
+
+Praktik yang lebih aman:
+
+- set native VLAN eksplisit
+- gunakan native VLAN yang tidak dipakai user
+- hindari VLAN 1 untuk user/management
+- batasi allowed VLAN pada trunk
+- matikan trunk negotiation pada port endpoint
+- dokumentasikan VLAN allowed di uplink
+
+Allowed VLAN:
+
+```text
+Trunk ke access switch lantai 2
+Allowed VLAN: 10,20,99
+
+Trunk ke server hypervisor
+Allowed VLAN: 30,40,50
+```
+
+Allowed VLAN yang terlalu lebar membuat blast radius lebih besar. Kalau trunk hanya butuh VLAN 10 dan 20, jangan biarkan semua VLAN lewat.
 
 DTP:
 
@@ -2114,6 +2248,8 @@ DTP:
 
 ```text
 Ethernet Frame + VLAN Tag
+
+Destination MAC | Source MAC | 802.1Q Tag | EtherType | Payload | FCS
 ```
 
 Field tag penting:
@@ -2124,6 +2260,157 @@ Field tag penting:
 | PCP | priority/QoS |
 | DEI | drop eligible indicator |
 | VLAN ID | nomor VLAN |
+
+Detail field:
+
+| Field | Ukuran | Catatan |
+|---|---:|---|
+| TPID | 16 bit | biasanya `0x8100`, menandakan frame 802.1Q |
+| PCP | 3 bit | priority code point untuk QoS Layer 2 |
+| DEI | 1 bit | drop eligible indicator |
+| VLAN ID | 12 bit | VLAN ID, secara teori 0-4095 |
+
+VLAN ID umum:
+
+| VLAN ID | Catatan |
+|---:|---|
+| 0 | priority tag, bukan VLAN biasa |
+| 1 | default VLAN pada banyak switch, sebaiknya tidak dipakai untuk user |
+| 2-1001 | normal range pada banyak platform |
+| 1002-1005 | historically reserved untuk legacy Token Ring/FDDI pada Cisco |
+| 1006-4094 | extended range |
+| 4095 | reserved |
+
+MAC table per VLAN:
+
+```text
+VLAN    MAC Address        Type      Port
+10      aaaa.bbbb.cccc     dynamic   Gi1/0/10
+20      aaaa.bbbb.cccc     dynamic   Gi1/0/20
+```
+
+MAC address yang sama bisa muncul di VLAN berbeda karena lookup Layer 2 memperhitungkan VLAN. Switch tidak hanya berpikir "MAC ini ada di port mana", tetapi "MAC ini ada di port mana untuk VLAN mana".
+
+VLAN dan DHCP:
+
+```text
+Client VLAN 10
+-> DHCP Discover broadcast
+-> Switch tetap dalam VLAN 10
+-> SVI/firewall VLAN 10 menerima broadcast
+-> DHCP relay mengirim unicast ke DHCP server
+-> DHCP server memberi IP scope VLAN 10
+```
+
+Jika client mendapat IP dari subnet yang salah, kandidat awal:
+
+| Gejala | Kemungkinan |
+|---|---|
+| IP subnet salah | port masuk VLAN salah |
+| AP SSID memberi subnet salah | SSID-to-VLAN mapping salah |
+| VM dapat IP VLAN lain | port group/trunk hypervisor salah |
+| DHCP tidak menjawab | DHCP relay tidak ada atau VLAN tidak sampai gateway |
+| Gateway tidak bisa ping | access VLAN atau trunk allowed VLAN salah |
+
+VLAN pada virtualization:
+
+| Mode | Arti |
+|---|---|
+| VLAN di physical switch access port | host/hypervisor hanya melihat untagged VLAN tertentu |
+| VLAN trunk ke hypervisor | hypervisor/virtual switch membagi VLAN ke VM/port group |
+| VLAN tag di guest VM | guest OS sendiri mengirim frame tagged, butuh desain khusus |
+
+Contoh hypervisor:
+
+```text
+Physical switch trunk -> Hypervisor
+Allowed VLAN: 30,40
+
+Port group: Web-Servers VLAN 30
+Port group: DB-Servers VLAN 40
+```
+
+VLAN pada wireless:
+
+```text
+SSID Corp    -> VLAN 10
+SSID Voice   -> VLAN 20
+SSID Guest   -> VLAN 50
+SSID Admin   -> VLAN 99
+```
+
+AP biasanya terhubung ke switch lewat trunk karena satu AP bisa membawa beberapa SSID/VLAN.
+
+VLAN security:
+
+| Risiko | Penjelasan | Mitigasi |
+|---|---|---|
+| VLAN hopping switch spoofing | endpoint mencoba menjadi trunk | disable DTP, paksa access mode |
+| Double tagging | frame membawa dua tag dan menyalahgunakan native VLAN | native VLAN tidak dipakai user, jangan pakai VLAN 1 |
+| Native VLAN mismatch | untagged frame masuk VLAN salah | native VLAN konsisten dan eksplisit |
+| Trunk allowed terlalu luas | VLAN tidak perlu ikut tersebar | allowlist VLAN pada trunk |
+| Management VLAN exposed | user bisa akses switch/AP/firewall management | ACL, dedicated admin subnet, MFA/AAA |
+| Rogue DHCP dalam VLAN | client mendapat gateway/DNS palsu | DHCP snooping |
+| ARP spoofing | traffic dialihkan dalam VLAN | Dynamic ARP Inspection |
+
+Troubleshooting VLAN:
+
+| Pertanyaan | Bukti yang Dicari |
+|---|---|
+| Port endpoint VLAN berapa | switchport mode/access VLAN |
+| Trunk membawa VLAN yang benar | allowed VLAN list |
+| Native VLAN sama di dua sisi | trunk detail |
+| MAC endpoint belajar di VLAN benar | MAC address table |
+| Gateway VLAN hidup | SVI/interface status |
+| DHCP relay ada | helper address/relay config |
+| STP memblokir port | STP state |
+| AP/VM mapping benar | SSID/port group VLAN ID |
+
+Command vendor-neutral/conceptual:
+
+```text
+# Melihat VLAN yang ada dan port membership.
+show vlan
+
+# Melihat konfigurasi access/trunk pada interface.
+show interface switchport
+
+# Melihat trunk, native VLAN, dan allowed VLAN.
+show interface trunk
+
+# Melihat MAC address dipelajari pada VLAN tertentu.
+show mac address-table vlan 10
+
+# Melihat ARP gateway atau host.
+show arp
+
+# Melihat status SVI.
+show ip interface brief
+
+# Melihat STP state per VLAN.
+show spanning-tree vlan 10
+```
+
+Command Linux untuk melihat VLAN tag:
+
+```bash
+# Melihat VLAN subinterface di Linux.
+ip -d link show
+
+# Membuat VLAN subinterface lab VLAN 10 di atas eth0.
+sudo ip link add link eth0 name eth0.10 type vlan id 10
+
+# Memberi IP pada VLAN subinterface.
+sudo ip addr add 10.10.10.10/24 dev eth0.10
+
+# Mengaktifkan VLAN subinterface.
+sudo ip link set eth0.10 up
+
+# Capture frame VLAN 10 jika tag terlihat di host.
+sudo tcpdump -i eth0 -e vlan 10
+```
+
+Catatan capture: VLAN tag kadang tidak terlihat di host karena NIC VLAN offload. Jika capture tidak menampilkan tag, cek offload atau ambil capture dari switch SPAN/TAP.
 
 Link aggregation:
 
@@ -2461,6 +2748,21 @@ Environment:
 ---
 
 ## 3.0 Network Operations
+
+**Praktik setelah bab ini:** kumpulkan bukti operasional sebelum membuat kesimpulan.
+
+```bash
+# Menguji reachability dan latency dasar.
+ping -c 4 8.8.8.8
+
+# Melacak jalur packet ke tujuan.
+traceroute 8.8.8.8
+
+# Capture traffic DNS untuk melihat query dan response.
+sudo tcpdump -i eth0 -nn port 53
+```
+
+Catat: waktu tes, scope dampak, hop yang berubah, packet loss, latency, DNS resolver, dan perubahan terakhir yang mungkin relevan.
 
 Bagian ini membahas dokumentasi, monitoring, DR, network services, dan akses management.
 
@@ -3113,6 +3415,21 @@ TACACS+ vs RADIUS:
 
 ## 4.0 Network Security
 
+**Praktik setelah bab ini:** lihat security control sebagai traffic yang diizinkan, ditolak, atau dicatat.
+
+```bash
+# Melihat listening socket lokal yang menjadi attack surface.
+ss -tulpn
+
+# Melihat ruleset firewall nftables jika tersedia.
+sudo nft list ruleset
+
+# Scan port host milik sendiri untuk validasi exposure.
+nmap -sV 127.0.0.1
+```
+
+Catat: service yang expose port, rule yang mengizinkan traffic, rule yang menolak traffic, dan apakah hasil scan sesuai ekspektasi hardening.
+
 Bagian ini membahas konsep security, attack, dan defense.
 
 ### 4.1 Basic Network Security Concepts
@@ -3604,6 +3921,24 @@ Security monitoring:
 ---
 
 ## 5.0 Network Troubleshooting
+
+**Praktik setelah bab ini:** pecahkan masalah dengan urutan bukti, bukan tebakan.
+
+```bash
+# Cek DNS resolution.
+dig example.com
+
+# Cek route yang dipilih untuk destination.
+ip route get 93.184.216.34
+
+# Cek koneksi TCP ke port HTTPS.
+nc -vz example.com 443
+
+# Capture traffic ke host tujuan.
+sudo tcpdump -i eth0 -nn host 93.184.216.34
+```
+
+Catat: layer pertama yang gagal, output yang membuktikan gagal, dan command pembanding dari layer lain.
 
 Bagian ini membahas methodology, physical issues, services, performance, dan tools.
 
@@ -4160,6 +4495,21 @@ Interpretasi cepat:
 ---
 
 ## 6.0 Senior Deep Dive
+
+**Praktik setelah bab ini:** baca state kernel, NIC, TCP, DNS, dan packet capture secara bersamaan.
+
+```bash
+# Melihat detail TCP socket, timer, dan congestion info.
+ss -ti
+
+# Melihat fitur offload NIC.
+ethtool -k eth0
+
+# Capture traffic ke file pcap untuk analisis lanjutan.
+sudo tcpdump -i eth0 -nn -w network-deep-dive.pcap
+```
+
+Catat: retransmission, RTT, congestion state, offload yang bisa memengaruhi capture, dan bukti packet-level yang mendukung kesimpulan.
 
 Bagian ini untuk membaca network seperti operator senior: bukan hanya "bisa ping atau tidak", tetapi packet lewat jalur mana, state apa yang dibuat, cache mana yang dipakai, counter mana yang naik, dan bukti apa yang cukup kuat untuk menyatakan root cause.
 
@@ -4787,161 +5137,3 @@ Checklist performance incident:
 7. Validasi setelah perubahan dengan metric yang sama.
 
 ---
-
-## Lab Checklist
-
-- Buat subnet plan untuk beberapa VLAN.
-- Ubah IPv4 decimal ke binary dan sebaliknya.
-- Hitung network, broadcast, usable range, dan host count dari IP/prefix manual.
-- Hitung subnet mask dan wildcard mask dari prefix.
-- Split satu `/24` menjadi `/25`, `/26`, `/27`, dan `/28`.
-- Rancang IPv6 `/56` menjadi beberapa subnet `/64`.
-- Test IPv4 dan IPv6 route lookup dengan `ip route get` dan `ip -6 route get`.
-- Hitung subnet `/24`, `/26`, `/27`, `/30`.
-- Capture DNS query dengan Wireshark.
-- Capture TCP three-way handshake.
-- Buat DHCP scope dan reservation.
-- Buat DNS record A, CNAME, MX, TXT, PTR.
-- Konfigurasi VLAN access dan trunk di simulator.
-- Simulasikan native VLAN mismatch.
-- Uji STP loop prevention.
-- Konfigurasi static route dan default route.
-- Bandingkan NAT dan PAT.
-- Buat Wi-Fi channel plan 2.4 GHz dan 5 GHz.
-- Buat diagram logical dan physical sederhana.
-- Cek port dengan `nmap`.
-- Troubleshoot DNS, gateway, subnet mask, duplicate IP.
-- Buat ACL sederhana permit/deny.
-- Simulasikan packet loss dan latency.
-- Capture packet di client, gateway, firewall, dan server untuk kasus yang sama.
-- Bandingkan hasil capture dengan offload NIC aktif dan nonaktif di lab.
-- Simulasikan conntrack/NAT state lama setelah rule NAT berubah.
-- Cek TCP state `SYN-SENT`, `SYN-RECEIVED`, `CLOSE-WAIT`, dan `TIME-WAIT`.
-- Uji DNS delegation dengan `dig +trace`.
-- Uji DNS TCP fallback dengan `dig +tcp`.
-- Uji throughput TCP single stream dan multi-stream dengan `iperf3`.
-- Cek qdisc, interface drops, dan retransmission saat link dibuat congested.
-- Dokumentasikan incident kecil memakai format RCA.
-
----
-
-## Command Index Cepat
-
-### Linux/macOS
-
-```bash
-# Menguji reachability dan latency dasar.
-ping host
-
-# Melacak jalur packet.
-traceroute host
-
-# Query DNS detail.
-dig name
-
-# Query DNS sederhana.
-nslookup name
-
-# Melihat interface dan address.
-ip addr
-
-# Melihat routing table.
-ip route
-
-# Melihat neighbor/ARP table.
-ip neigh
-
-# Menghitung subnet jika ipcalc tersedia.
-ipcalc address/prefix
-
-# Melihat listening socket.
-ss -tulpn
-
-# Melihat detail TCP termasuk timer dan congestion info.
-ss -tin
-
-# Capture packet.
-tcpdump -i interface
-
-# Scan port host.
-nmap host
-
-# Melihat fitur offload NIC.
-ethtool -k interface
-
-# Melihat statistik driver/NIC.
-ethtool -S interface
-
-# Melihat qdisc dan drop.
-tc -s qdisc show dev interface
-
-# Melihat policy routing rule.
-ip rule show
-
-# Melihat route yang dipilih untuk destination tertentu.
-ip route get destination
-
-# Melihat ruleset firewall nftables.
-nft list ruleset
-
-# Melihat conntrack entry aktif.
-conntrack -L
-
-# Trace DNS delegation.
-dig +trace name
-
-# Uji throughput TCP.
-iperf3 -c host
-```
-
-### Windows
-
-```bash
-# Melihat konfigurasi IP lengkap.
-ipconfig /all
-
-# Melacak jalur packet.
-tracert host
-
-# Query DNS.
-nslookup name
-
-# Melihat ARP table.
-arp -a
-
-# Melihat koneksi dan port.
-netstat -ano
-
-# Menguji koneksi TCP ke port tertentu.
-Test-NetConnection host -Port 443
-```
-
----
-
-## Checklist Kesiapan Praktik
-
-Catatan ini sudah berguna kalau kamu bisa:
-
-- Menjelaskan OSI layer dan contoh masalah tiap layer.
-- Menghafal dan memahami port/protocol utama.
-- Menghitung subnet IPv4 umum.
-- Membedakan TCP, UDP, unicast, broadcast, multicast, anycast.
-- Menjelaskan VLAN, trunk, native VLAN, SVI, STP, LACP.
-- Menjelaskan routing static/dynamic, OSPF, EIGRP, BGP secara high-level.
-- Menjelaskan NAT, PAT, FHRP, VIP.
-- Membaca DNS record dan DHCP scope.
-- Menjelaskan wireless channel, band, SSID/BSSID/ESSID, WPA2/WPA3.
-- Membuat diagram physical/logical sederhana.
-- Menjelaskan SNMP, flow data, packet capture, syslog, SIEM.
-- Menjelaskan RPO, RTO, MTTR, MTBF, cold/warm/hot site.
-- Menjelaskan IAM, RADIUS, LDAP, SAML, TACACS+, MFA, RBAC.
-- Mengenali attack umum seperti ARP poisoning, VLAN hopping, rogue DHCP, evil twin, DDoS.
-- Menggunakan `ping`, `traceroute`, `dig`, `nslookup`, `tcpdump`, `nmap`.
-- Menjalankan troubleshooting dengan methodology yang rapi.
-- Menjelaskan Linux packet path dari NIC RX sampai socket atau forwarding.
-- Menjelaskan conntrack, NAT timing, dan kenapa asymmetric routing mematahkan firewall stateful.
-- Membaca TCP state dan membedakan `TIME-WAIT`, `CLOSE-WAIT`, `SYN-SENT`, dan `SYN-RECEIVED`.
-- Membaca gejala TCP seperti retransmission, duplicate ACK, zero window, dan RTO.
-- Menjelaskan DNS delegation, glue record, SOA, AXFR/IXFR, DNSSEC, dan EDNS.
-- Membaca interface drops, NIC offload, qdisc, queue, dan driver counters.
-- Melakukan RCA singkat berbasis timeline, evidence, root cause, dan prevention.

@@ -1,6 +1,6 @@
 # Active Directory
 
-Catatan Active Directory pribadi untuk belajar serius, praktik lab, troubleshooting, dan membangun fondasi identity berbasis domain.
+Catatan Active Directory pribadi untuk belajar serius, praktik command, troubleshooting, dan membangun fondasi identity berbasis domain.
 
 Fokus halaman ini adalah Active Directory Domain Services sebagai identity backbone: domain, forest, domain controller, DNS, Kerberos, LDAP, OU, group, GPO, replication, delegation, backup/restore, dan security operations.
 
@@ -98,9 +98,6 @@ Area utama:
   - [10.4 GPO Not Applying](#104-gpo-not-applying)
   - [10.5 Replication Broken](#105-replication-broken)
   - [10.6 DNS and DC Locator Failure](#106-dns-and-dc-locator-failure)
-- [Lab Checklist](#lab-checklist)
-- [Command Index Cepat](#command-index-cepat)
-- [Checklist Kesiapan Praktik](#checklist-kesiapan-praktik)
 
 ---
 
@@ -119,36 +116,32 @@ Saat belajar atau troubleshooting AD, biasakan bertanya:
 - apakah perubahan sudah replicate ke semua DC
 - apakah privilege admin yang dipakai sesuai tier
 
-Format command:
+Pola belajar di file ini:
 
-```powershell
-# Setiap command diberi komentar singkat.
-Get-Command
-```
-
-Lab minimum:
-
-| Komponen | Rekomendasi |
-|---|---|
-| Domain controller | 2 VM Windows Server |
-| Member server | 1 VM Windows Server |
-| Client | 1 VM Windows 10/11 |
-| Domain | `lab.local` atau domain lab lain |
-| DNS | AD-integrated DNS pada DC |
-| Snapshot | sebelum promote DC, ubah GPO besar, dan simulasi failure |
-| Tools | ADUC, ADAC, DNS Manager, GPMC, Sites and Services, PowerShell |
-
-Catatan penting:
-
-- Jangan memakai domain produksi untuk eksperimen.
-- Jangan menjalankan workload umum di domain controller.
-- Jangan login ke endpoint biasa memakai Domain Admin.
-- Jangan menghapus object AD sebelum paham dependency dan restore path.
-- Jangan mengubah DNS AD tanpa tahu dampak ke DC locator.
+- baca konsep singkat, lalu langsung jalankan command yang ada di section tersebut
+- sebelum melihat output atau membaca penjelasan lanjutan, prediksi dulu apa yang seharusnya terjadi
+- setelah command selesai, tulis observasi: output penting, gejala, layer/komponen yang terlibat, dan dugaan penyebab
+- ulangi praktik yang sama di hari berikutnya tanpa melihat catatan agar ingatan dibangun lewat recall
+- jalankan command hanya di sistem milik sendiri, lab pribadi, atau environment yang memang kamu diberi izin
 
 ---
 
 ## 1.0 AD DS Fundamentals
+
+**Praktik setelah bab ini:** lihat AD sebagai object, attribute, security descriptor, dan DNS-backed identity system.
+
+```powershell
+# Import module Active Directory.
+Import-Module ActiveDirectory
+
+# Tampilkan informasi domain.
+Get-ADDomain
+
+# Tampilkan informasi forest.
+Get-ADForest
+```
+
+Catat: domain DN, forest, functional level, RID/Infrastructure/PDC role, dan DNS namespace yang dipakai identity.
 
 ### 1.1 Apa Itu Active Directory
 
@@ -407,6 +400,21 @@ Get-ADDomain | Select-Object RIDMaster
 
 ## 2.0 Domain Controller and DNS
 
+**Praktik setelah bab ini:** buktikan DC discovery lewat DNS dan health domain controller.
+
+```powershell
+# Query SRV LDAP domain controller.
+Resolve-DnsName _ldap._tcp.dc._msdcs.lab.local -Type SRV
+
+# Cari domain controller untuk domain.
+nltest /dsgetdc:lab.local
+
+# Tampilkan status replication ringkas.
+repadmin /replsummary
+```
+
+Catat: DC yang ditemukan, site, DNS SRV record, replication failure, dan apakah client memakai DNS internal.
+
 ### 2.1 Domain Controller Role
 
 Domain controller atau DC adalah server yang menjalankan AD DS dan menyimpan salinan directory database. DC melayani authentication, LDAP query, Kerberos ticket, Group Policy discovery, dan replication.
@@ -611,6 +619,21 @@ Get-Service ADWS, DNS, DFSR, KDC, Netlogon | Select-Object Name, Status, StartTy
 ---
 
 ## 3.0 Identity Objects
+
+**Praktik setelah bab ini:** buat hubungan user, group, computer, OU, dan attribute menjadi terlihat.
+
+```powershell
+# Cari user dan tampilkan attribute penting.
+Get-ADUser alice -Properties MemberOf,LastLogonDate,Enabled
+
+# Tampilkan group membership user.
+Get-ADPrincipalGroupMembership alice
+
+# Tampilkan computer object.
+Get-ADComputer LAB-FS-01 -Properties OperatingSystem,LastLogonDate
+```
+
+Catat: DN object, OU location, group membership, enabled state, last logon, dan attribute yang memengaruhi access.
 
 ### 3.1 Users
 
@@ -846,6 +869,21 @@ Set-ADUser alice -Description "Disabled on 2026-05-24 - offboarding ticket INC00
 
 ## 4.0 Authentication and Authorization
 
+**Praktik setelah bab ini:** bedakan authentication, ticket, token, group, dan permission.
+
+```powershell
+# Tampilkan ticket Kerberos aktif.
+klist
+
+# Query SPN service tertentu.
+setspn -Q HTTP/web01.lab.local
+
+# Lihat token group user saat ini.
+whoami /groups
+```
+
+Catat: TGT, service ticket, SPN, group SID, privilege, dan permission resource yang akhirnya menentukan access.
+
 ### 4.1 Kerberos Flow
 
 Kerberos adalah authentication protocol utama AD. Kerberos memakai ticket, bukan mengirim password ke service setiap kali akses.
@@ -1063,6 +1101,21 @@ w32tm /query /status
 
 ## 5.0 Group Policy
 
+**Praktik setelah bab ini:** buktikan GPO dari link, inheritance, result, dan SYSVOL.
+
+```powershell
+# Tampilkan GPO yang ada.
+Get-GPO -All
+
+# Tampilkan inheritance pada OU.
+Get-GPInheritance -Target "OU=Servers,DC=lab,DC=local"
+
+# Buat report result policy untuk komputer saat ini.
+gpresult /h C:\Temp\gpresult.html
+```
+
+Catat: GPO link order, enforced/block inheritance, security filtering, WMI filter, dan setting yang benar-benar applied.
+
 ### 5.1 GPO Components and Processing
 
 Group Policy mengatur konfigurasi user dan computer secara terpusat. GPO punya dua bagian:
@@ -1237,6 +1290,21 @@ dir \\lab.local\SYSVOL
 ---
 
 ## 6.0 Replication, Sites, and FSMO
+
+**Praktik setelah bab ini:** lihat AD sebagai sistem terdistribusi, bukan satu database tunggal.
+
+```powershell
+# Tampilkan replication summary.
+repadmin /replsummary
+
+# Tampilkan replication partner.
+repadmin /showrepl
+
+# Tampilkan FSMO role holder.
+netdom query fsmo
+```
+
+Catat: source DC, destination DC, naming context, last success, failure code, site link, dan role holder.
 
 ### 6.1 AD Replication Concepts
 
@@ -1424,6 +1492,21 @@ Get-WinEvent -LogName "Directory Service" -MaxEvents 30
 ---
 
 ## 7.0 Administration and Delegation
+
+**Praktik setelah bab ini:** bedakan admin convenience dari delegated least privilege.
+
+```powershell
+# Tampilkan ACL domain root.
+Get-Acl "AD:\DC=lab,DC=local" | Select-Object -ExpandProperty Access
+
+# Tampilkan group admin berisiko tinggi.
+Get-ADGroupMember "Domain Admins"
+
+# Tampilkan protected users jika ada.
+Get-ADGroupMember "Protected Users"
+```
+
+Catat: trustee, delegated right, inheritance, admin group, dan apakah permission sesuai tugas operasional.
 
 ### 7.1 Administrative Tools
 
@@ -1629,6 +1712,21 @@ Backup-GPO -All -Path C:\Temp\GPO-Backup
 ---
 
 ## 8.0 Security Engineering
+
+**Praktik setelah bab ini:** cari jalur privilege, exposure identity, dan kontrol pencegahan.
+
+```powershell
+# Tampilkan user dengan password tidak pernah expired.
+Get-ADUser -Filter 'PasswordNeverExpires -eq $true' -Properties PasswordNeverExpires
+
+# Tampilkan user disabled yang masih punya group membership.
+Get-ADUser -Filter 'Enabled -eq $false' -Properties MemberOf | Where-Object MemberOf
+
+# Tampilkan computer yang lama tidak login.
+Search-ADAccount -ComputersOnly -AccountInactive -TimeSpan 90.00:00:00
+```
+
+Catat: stale object, risky flag, privileged membership, service account, dan tindakan remediation yang aman.
 
 ### 8.1 Tiering Model and Privileged Access
 
@@ -1895,6 +1993,21 @@ Get-ADObject -LDAPFilter "(userAccountControl:1.2.840.113556.1.4.803:=524288)" -
 
 ## 9.0 Backup, Restore, and Recovery
 
+**Praktik setelah bab ini:** pastikan recovery bisa dibuktikan, bukan hanya backup berhasil.
+
+```powershell
+# Cek AD Recycle Bin feature.
+Get-ADOptionalFeature -Filter 'Name -like "Recycle Bin Feature"'
+
+# Tampilkan backup versions jika Windows Server Backup dipakai.
+wbadmin get versions
+
+# Tampilkan DC system state backup target jika tersedia.
+wbadmin get status
+```
+
+Catat: backup time, backup scope, restore path, AD Recycle Bin state, dan kapan perlu authoritative restore.
+
 ### 9.1 System State Backup
 
 Domain controller backup harus mencakup System State. Untuk DC, System State mencakup AD database, SYSVOL, registry, boot files, COM+ class registration, dan komponen penting lain.
@@ -2039,6 +2152,21 @@ Get-ADReplicationSubnet -Filter * | Select-Object Name, Site | Export-Csv C:\Tem
 ---
 
 ## 10.0 Troubleshooting Playbooks
+
+**Praktik setelah bab ini:** susun bukti AD dari client, DNS, DC, replication, dan policy.
+
+```powershell
+# Cari DC yang dipilih client.
+nltest /dsgetdc:lab.local
+
+# Force rediscovery DC.
+nltest /dsgetdc:lab.local /force
+
+# Query SRV record site tertentu.
+Resolve-DnsName _ldap._tcp.Jakarta._sites.dc._msdcs.lab.local -Type SRV
+```
+
+Catat: DC locator result, site mapping, DNS answer, time sync, secure channel, dan event log yang membuktikan akar masalah.
 
 ### 10.1 User Cannot Log In
 
@@ -2225,196 +2353,3 @@ Restart-Service Netlogon
 ```
 
 ---
-
-## Lab Checklist
-
-Lab yang sebaiknya dibuat:
-
-| Lab | Target |
-|---|---|
-| Build forest baru | memahami first DC, DNS, domain |
-| Add second DC | memahami replication dan GC |
-| AD-integrated DNS | membuat zone, SRV check, forwarder |
-| OU design | membuat OU untuk users, servers, admins |
-| Users/groups | membuat AGDLP permission model |
-| Domain join | join client/member server |
-| GPO baseline | membuat dan troubleshoot GPO |
-| Loopback GPO | RDS/kiosk-like policy |
-| Sites/subnets | client memilih DC sesuai site |
-| Replication failure | membaca repadmin dan event |
-| Account lockout | menemukan caller computer |
-| gMSA | menjalankan service dengan managed password |
-| AD Recycle Bin | delete dan restore object |
-| Backup/restore | system state backup di lab |
-| Security audit | review privileged groups dan dangerous delegation |
-
-Mini scenario:
-
-| Scenario | Yang Dilatih |
-|---|---|
-| user tidak bisa login | status user, lockout, DC, DNS, time |
-| GPO tidak apply | scope, filter, SYSVOL, event |
-| domain join gagal | DNS SRV, port, credential |
-| file share access denied | token, group, ACL |
-| password reset tidak berlaku | PDC, replication, DC choice |
-| site branch login lambat | subnet mapping dan DC locator |
-| duplicate SPN | Kerberos failure dan NTLM fallback |
-| deleted OU | AD Recycle Bin dan restore |
-
----
-
-## Command Index Cepat
-
-Domain/forest:
-
-```powershell
-# Tampilkan informasi domain.
-Get-ADDomain
-
-# Tampilkan informasi forest.
-Get-ADForest
-
-# Tampilkan domain controller.
-Get-ADDomainController -Filter *
-
-# Tampilkan FSMO roles.
-netdom query fsmo
-```
-
-DNS/DC:
-
-```powershell
-# Query DC locator SRV.
-Resolve-DnsName _ldap._tcp.dc._msdcs.lab.local -Type SRV
-
-# Cek DNS zones.
-Get-DnsServerZone
-
-# Diagnostic DC.
-dcdiag
-
-# Diagnostic DNS DC.
-dcdiag /test:dns
-```
-
-Users/groups:
-
-```powershell
-# Cari user.
-Get-ADUser alice -Properties *
-
-# Cari group members.
-Get-ADGroupMember "Domain Admins"
-
-# Tambah user ke group.
-Add-ADGroupMember -Identity "GG-Finance-Users" -Members alice
-
-# Cari inactive user.
-Search-ADAccount -AccountInactive -UsersOnly -TimeSpan 90.00:00:00
-```
-
-Kerberos/auth:
-
-```powershell
-# Tampilkan Kerberos tickets.
-klist
-
-# Purge Kerberos tickets.
-klist purge
-
-# Cari SPN.
-setspn -Q HTTP/web01.lab.local
-
-# Cari duplicate SPN.
-setspn -X
-```
-
-GPO:
-
-```powershell
-# Tampilkan semua GPO.
-Get-GPO -All
-
-# Force update policy.
-gpupdate /force
-
-# Tampilkan result policy.
-gpresult /r
-
-# Export result policy HTML.
-gpresult /h C:\Temp\gpresult.html
-```
-
-Replication:
-
-```powershell
-# Ringkas replication.
-repadmin /replsummary
-
-# Detail replication.
-repadmin /showrepl
-
-# Sync replication.
-repadmin /syncall /AdeP
-
-# Cek replication failures.
-Get-ADReplicationFailure -Target (Get-ADDomain).DNSRoot -Scope Domain
-```
-
-Security:
-
-```powershell
-# Review privileged group members.
-Get-ADGroupMember "Domain Admins"
-
-# Cari password never expires.
-Get-ADUser -Filter {PasswordNeverExpires -eq $true -and Enabled -eq $true} -Properties PasswordNeverExpires
-
-# Cari account lockout events.
-Get-WinEvent -FilterHashtable @{LogName="Security"; Id=4740} -MaxEvents 20
-
-# Cek audit policy.
-auditpol /get /category:*
-```
-
-Recovery:
-
-```powershell
-# Backup system state.
-wbadmin start systemstatebackup -backuptarget:E: -quiet
-
-# Cek backup versions.
-wbadmin get versions
-
-# Cari deleted AD objects.
-Get-ADObject -Filter 'isDeleted -eq $true' -IncludeDeletedObjects
-
-# Restore deleted object.
-Restore-ADObject -Identity "object-guid-here"
-```
-
----
-
-## Checklist Kesiapan Praktik
-
-Kamu dianggap cukup siap mengelola dan mengamankan Active Directory jika bisa:
-
-- menjelaskan forest, domain, tree, trust, OU, schema, GC, SID, RID, dan UPN
-- menjelaskan kenapa DNS internal adalah dependency utama AD
-- promote DC baru dan tahu cara demote DC dengan benar
-- membaca health DC dengan `dcdiag`, `repadmin`, DNS SRV, SYSVOL, dan event log
-- membuat user, group, computer, OU, dan service account dengan PowerShell
-- memakai model AGDLP/AGUDLP untuk permission
-- menjelaskan Kerberos TGT, service ticket, KDC, SPN, dan penyebab fallback NTLM
-- troubleshoot login failure, account lockout, domain join, dan secure channel
-- membuat, link, filter, dan troubleshoot GPO
-- menjelaskan loopback processing dan kapan dipakai
-- mendesain site/subnet agar client memilih DC terdekat
-- menjelaskan replication partition, KCC, site link, dan replication failure
-- menjelaskan 5 FSMO roles dan kapan transfer/seize
-- menerapkan tiering model dan memisahkan admin account
-- review privileged groups, dangerous rights, delegation, SPN, dan service accounts
-- mengaktifkan audit penting dan membaca event ID AD/security utama
-- melakukan backup system state dan memahami AD Recycle Bin
-- tahu kapan perlu authoritative restore atau forest recovery
-- siap lanjut ke security handbook yang lebih fokus ke defensive operations, detection engineering, dan incident response

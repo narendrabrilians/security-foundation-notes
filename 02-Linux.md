@@ -1,6 +1,6 @@
-﻿# Linux
+# Linux
 
-Catatan Linux pribadi untuk belajar, praktik lab, dan referensi ketika bekerja.
+Catatan Linux pribadi untuk belajar serius, praktik command, dan membangun fondasi administrasi Linux.
 
 Fokus utama catatan ini:
 
@@ -19,7 +19,7 @@ Area utama:
 | Automation, Orchestration, and Scripting | Bash, Python, Ansible, Git, CI/CD, AI-assisted workflow |
 | Troubleshooting | monitoring, log, hardware, storage, OS, network, security, performance |
 
-Gunakan halaman ini sebagai checklist belajar, ringkasan command, dan peta lab.
+Gunakan halaman ini untuk memahami konsep, menjalankan command, mencatat observasi, dan mengulang praktik dari ingatan.
 
 ## Daftar Isi
 
@@ -57,9 +57,6 @@ Gunakan halaman ini sebagai checklist belajar, ringkasan command, dan peta lab.
   - [5.3 Networking Issues](#53-networking-issues)
   - [5.4 Security Issues](#54-security-issues)
   - [5.5 Performance Issues](#55-performance-issues)
-- [Lab Checklist](#lab-checklist)
-- [Command Index Cepat](#command-index-cepat)
-- [Checklist Kesiapan Praktik](#checklist-kesiapan-praktik)
 
 ---
 
@@ -104,20 +101,35 @@ Aturan membaca:
 
 ### Lab Minimum
 
-Satu lab Linux yang sehat minimal punya:
+Pola belajar di file ini:
 
-- satu VM Debian/Ubuntu
-- satu VM Fedora/Rocky/Alma/RHEL-like
-- dua disk virtual tambahan untuk LVM dan RAID
-- akses snapshot agar mudah rollback
-- network NAT dan host-only/private network
-- user non-root dengan akses `sudo`
-
-Jangan belajar command berisiko hanya dari mesin produksi atau laptop utama. Banyak topik seperti `mkfs`, `mdadm`, GRUB, SELinux, firewall, dan LUKS sengaja mengubah state sistem secara besar.
+- baca konsep singkat, lalu langsung jalankan command yang ada di section tersebut
+- sebelum melihat output atau membaca penjelasan lanjutan, prediksi dulu apa yang seharusnya terjadi
+- setelah command selesai, tulis observasi: output penting, gejala, layer/komponen yang terlibat, dan dugaan penyebab
+- ulangi praktik yang sama di hari berikutnya tanpa melihat catatan agar ingatan dibangun lewat recall
+- jalankan command hanya di sistem milik sendiri, lab pribadi, atau environment yang memang kamu diberi izin
 
 ---
 
 ## 1.0 System Management
+
+**Praktik setelah bab ini:** kenali sistem dari kernel, storage, filesystem, process, dan service.
+
+```bash
+# Melihat kernel dan arsitektur sistem.
+uname -a
+
+# Melihat block device dan mountpoint.
+lsblk -f
+
+# Melihat filesystem yang sedang ter-mount.
+findmnt
+
+# Melihat process dengan penggunaan resource terbesar.
+ps aux --sort=-%mem | head
+```
+
+Catat: kernel version, disk layout, filesystem type, mount option, process penting, dan service yang menjadi dependency sistem.
 
 Bagian ini merangkum konsep Linux dasar, boot, hardware, storage, network, shell, backup, dan virtualization.
 
@@ -1689,6 +1701,24 @@ File/lokasi:
 ---
 
 ## 2.0 Services and User Management
+
+**Praktik setelah bab ini:** hubungkan identity, permission, service, dan log.
+
+```bash
+# Melihat identity user saat ini.
+id
+
+# Melihat entry user lokal.
+getent passwd "$USER"
+
+# Melihat status service SSH jika tersedia.
+systemctl status ssh
+
+# Membaca log service SSH dari journal.
+journalctl -u ssh --no-pager -n 50
+```
+
+Catat: UID/GID, supplementary group, service state, unit file, log error, dan privilege yang dibutuhkan untuk tindakan admin.
 
 Bagian ini merangkum file/permission, user/group, process/job, software, systemd, logs, timers, dan container.
 
@@ -3285,6 +3315,24 @@ docker exec -it web env
 
 ## 3.0 Security
 
+**Praktik setelah bab ini:** buktikan security posture dari permission, sudo, network exposure, dan firewall.
+
+```bash
+# Melihat privilege sudo untuk user saat ini.
+sudo -l
+
+# Mencari file SUID yang umum menjadi titik privilege risk.
+find /usr -perm -4000 -type f -ls 2>/dev/null
+
+# Melihat listening socket yang expose service.
+ss -tulpn
+
+# Melihat ruleset firewall nftables jika tersedia.
+sudo nft list ruleset
+```
+
+Catat: command yang boleh dijalankan via sudo, file SUID, port terbuka, owner process, dan rule firewall yang relevan.
+
 Bagian ini merangkum authentication, authorization, accounting, firewall, hardening, account security, cryptography, compliance, dan auditing.
 
 ### 3.1 Authorization, Authentication, Accounting
@@ -4141,6 +4189,21 @@ Directive logrotate:
 
 ## 4.0 Automation, Orchestration, and Scripting
 
+**Praktik setelah bab ini:** ubah command manual menjadi script kecil yang bisa diuji dan diulang.
+
+```bash
+# Mengecek syntax script bash tanpa menjalankannya.
+bash -n script.sh
+
+# Menjalankan script dengan trace agar setiap command terlihat.
+bash -x script.sh
+
+# Menampilkan environment variable yang sedang aktif.
+env | sort
+```
+
+Catat: input, output, exit code, variable yang dipakai, error handling, dan bagian script yang harus dibuat idempotent.
+
 Bagian ini merangkum shell scripting, Python dasar, automation/config management, Git, CI/CD, dan AI best practices.
 
 ### 4.1 Automation and Orchestration
@@ -4742,6 +4805,24 @@ Jelaskan command yang dipakai dan risiko masing-masing.
 ---
 
 ## 5.0 Troubleshooting
+
+**Praktik setelah bab ini:** mulai dari gejala, lalu kumpulkan bukti OS, resource, log, dan network.
+
+```bash
+# Melihat log kernel terbaru.
+dmesg -T | tail -n 50
+
+# Melihat error prioritas tinggi dari journal.
+journalctl -p err --no-pager -n 50
+
+# Melihat disk usage filesystem.
+df -h
+
+# Melihat memory dan swap.
+free -h
+```
+
+Catat: waktu kejadian, error pertama, resource yang penuh, service terdampak, dan command validasi setelah perbaikan.
 
 Bagian ini merangkum monitoring, troubleshooting hardware/storage/OS, network, security, dan performance.
 
@@ -5415,441 +5496,3 @@ Penjelasan:
 - Selalu bandingkan kondisi sekarang dengan baseline normal jika tersedia.
 
 ---
-
-## Lab Checklist
-
-Kerjakan minimal sekali di VM:
-
-- Install package dengan `apt` dan `dnf`.
-- Buat user, group, sudo rule, password aging.
-- Set permission, ACL, SUID, SGID, sticky bit.
-- Buat partition, filesystem, mount, dan `/etc/fstab`.
-- Buat PV, VG, LV, extend LV, grow filesystem.
-- Buat RAID 1 dengan `mdadm` di disk virtual.
-- Simulasikan disk full dan inode full.
-- Buat backup dan restore dengan `tar` dan `rsync`.
-- Kelola service systemd dan buat timer sederhana.
-- Buat cronjob dan anacron job.
-- Konfigurasi IP static dengan `nmcli`.
-- Debug DNS, routing, firewall, dan port listening.
-- Harden SSH server.
-- Aktifkan firewalld/ufw dan buka port tertentu.
-- Debug SELinux denial dan perbaiki context.
-- Jalankan container dengan Docker atau Podman.
-- Buat VM dengan KVM/QEMU/libvirt.
-- Tulis script Bash dengan argument, condition, loop, function.
-- Tulis script Python kecil untuk cek service.
-- Buat Ansible inventory dan playbook sederhana.
-- Gunakan Git branch, commit, merge, dan tag.
-- Cek log dengan `journalctl`, `rsyslog`, `auditd`.
-- Jalankan monitoring CPU, memory, disk I/O, dan network.
-
----
-
-## Command Index Cepat
-
-### Help
-
-```bash
-# Membuka manual page resmi untuk command.
-man command
-
-# Menunjukkan pola redirection atau pipeline pada command umum.
-command --help
-
-# Membuka bantuan untuk shell builtin seperti cd.
-help cd
-
-# Membuka dokumentasi GNU info bila tersedia.
-info command
-```
-
-### Files
-
-```bash
-# Menampilkan isi direktori atau file yang cocok.
-ls -lah
-
-# Memeriksa tipe file dan metadata filesystem.
-stat file
-
-# Memeriksa tipe file dan metadata filesystem.
-file file
-
-# Mencari file berdasarkan nama, ukuran, tipe, atau kondisi lain.
-find / -name name
-
-# Mencari teks yang cocok dengan pattern.
-grep -R pattern /path
-
-# Membuat atau mengekstrak archive.
-tar -czvf backup.tar.gz dir
-
-# Menyalin dan menyinkronkan file secara efisien.
-rsync -avh src/ dst/
-```
-
-### Users
-
-```bash
-# Mengelola akun user, group, shell, password, atau masa berlaku akun.
-useradd
-
-# Mengelola akun user, group, shell, password, atau masa berlaku akun.
-usermod
-
-# Mengelola akun user, group, shell, password, atau masa berlaku akun.
-userdel
-
-# Mengelola akun user, group, shell, password, atau masa berlaku akun.
-groupadd
-
-# Mengelola akun user, group, shell, password, atau masa berlaku akun.
-groupmod
-
-# Mengelola akun user, group, shell, password, atau masa berlaku akun.
-groupdel
-
-# Mengelola akun user, group, shell, password, atau masa berlaku akun.
-passwd
-
-# Mengelola akun user, group, shell, password, atau masa berlaku akun.
-chage
-
-# Melihat identitas, group, login, atau database akun.
-id
-
-# Melihat identitas, group, login, atau database akun.
-getent
-```
-
-### Permissions
-
-```bash
-# Mengatur ownership, permission, atau default permission.
-chmod
-
-# Mengatur ownership, permission, atau default permission.
-chown
-
-# Mengatur ownership, permission, atau default permission.
-chgrp
-
-# Mengatur ownership, permission, atau default permission.
-umask
-
-# Melihat atau mengubah Access Control List file.
-getfacl
-
-# Melihat atau mengubah Access Control List file.
-setfacl
-
-# Memeriksa permission setiap komponen path.
-namei -l
-```
-
-### Processes
-
-```bash
-# Melihat process dan penggunaan resource.
-ps aux
-
-# Melihat process dan penggunaan resource.
-top
-
-# Melihat process dan penggunaan resource.
-htop
-
-# Melihat process dan penggunaan resource.
-pstree
-
-# Mengirim signal untuk menghentikan atau mengontrol process.
-kill
-
-# Mengirim signal untuk menghentikan atau mengontrol process.
-killall
-
-# Mengirim signal untuk menghentikan atau mengontrol process.
-pkill
-
-# Mengatur prioritas scheduling process.
-nice
-
-# Mengatur prioritas scheduling process.
-renice
-
-# Melihat file atau socket yang sedang dibuka process.
-lsof
-
-# Melacak system call untuk debugging process.
-strace
-```
-
-### Systemd
-
-```bash
-# Mengelola atau memeriksa unit dan service systemd.
-systemctl
-
-# Membaca log dari systemd journal.
-journalctl
-
-# Menganalisis performa dan urutan boot systemd.
-systemd-analyze
-
-# Melihat sesi login dan seat yang dikelola systemd.
-loginctl
-
-# Melihat atau mengubah hostname dan metadata sistem.
-hostnamectl
-
-# Melihat atau mengatur waktu, timezone, dan sinkronisasi waktu.
-timedatectl
-```
-
-### Storage
-
-```bash
-# Menampilkan struktur block device, partition, dan mount point.
-lsblk
-
-# Menampilkan UUID, label, dan tipe filesystem.
-blkid
-
-# Membuat atau memeriksa partition table disk.
-fdisk
-
-# Membuat atau memeriksa partition table disk.
-gdisk
-
-# Membuat atau memeriksa partition table disk.
-parted
-
-# Memperbesar partition, umum pada disk cloud atau VM.
-growpart
-
-# Membuat filesystem baru pada block device.
-mkfs
-
-# Menampilkan atau mengelola mount filesystem.
-mount
-
-# Melepas filesystem dari mount point.
-umount
-
-# Menampilkan atau mengelola mount filesystem.
-findmnt
-
-# Memeriksa dan memperbaiki filesystem.
-fsck
-
-# Menampilkan penggunaan kapasitas filesystem.
-df
-
-# Menghitung ukuran file atau direktori.
-du
-
-# Melihat status dan detail object LVM.
-pvs
-
-# Melihat status dan detail object LVM.
-vgs
-
-# Melihat status dan detail object LVM.
-lvs
-
-# Membuat, memeriksa, atau memperbaiki software RAID.
-mdadm
-```
-
-### Network
-
-```bash
-# Melihat atau mengubah konfigurasi network Linux.
-ip addr
-
-# Melihat atau mengubah konfigurasi network Linux.
-ip link
-
-# Melihat atau mengubah konfigurasi network Linux.
-ip route
-
-# Melihat atau mengubah konfigurasi network Linux.
-ip neigh
-
-# Melihat socket dan port yang sedang listen atau aktif.
-ss -tulpn
-
-# Menguji konektivitas dasar ke host tujuan.
-ping
-
-# Melacak jalur network menuju host tujuan.
-traceroute
-
-# Melacak jalur network menuju host tujuan.
-tracepath
-
-# Menguji DNS dan resolver configuration.
-dig
-
-# Menguji DNS dan resolver configuration.
-resolvectl
-
-# Mengelola koneksi network melalui NetworkManager.
-nmcli
-
-# Menangkap packet network untuk analisis.
-tcpdump
-```
-
-### Security
-
-```bash
-# Mengelola atau memakai privilege administratif secara terkontrol.
-sudo
-
-# Mengelola atau memakai privilege administratif secara terkontrol.
-visudo
-
-# Memeriksa atau memperbaiki konfigurasi dan denial SELinux.
-getenforce
-
-# Memeriksa atau memperbaiki konfigurasi dan denial SELinux.
-sestatus
-
-# Memeriksa atau memperbaiki konfigurasi dan denial SELinux.
-restorecon
-
-# Memeriksa atau memperbaiki konfigurasi dan denial SELinux.
-semanage
-
-# Memeriksa atau memperbaiki konfigurasi dan denial SELinux.
-setsebool
-
-# Melihat atau mengubah aturan firewall.
-firewall-cmd
-
-# Melihat atau mengubah aturan firewall.
-ufw
-
-# Melihat atau mengubah aturan firewall.
-nft
-
-# Melihat atau mengubah aturan firewall.
-iptables
-
-# Mengelola rule audit dan membaca laporan audit.
-auditctl
-
-# Memeriksa atau memperbaiki konfigurasi dan denial SELinux.
-ausearch
-
-# Mengelola rule audit dan membaca laporan audit.
-aureport
-
-# Mengelola operasi TLS, certificate, random data, atau crypto dasar.
-openssl
-
-# Mengelola key, enkripsi, dekripsi, dan signature GPG.
-gpg
-
-# Membuat atau membuka encrypted volume LUKS.
-cryptsetup
-```
-
-### Hardware
-
-```bash
-# Menampilkan informasi kernel dan arsitektur sistem.
-uname -a
-
-# Menampilkan detail CPU dan arsitektur mesin.
-lscpu
-
-# Menampilkan informasi blok memory sistem.
-lsmem
-
-# Menampilkan perangkat PCI yang terdeteksi.
-lspci
-
-# Menampilkan perangkat USB yang terdeteksi.
-lsusb
-
-# Menampilkan inventaris hardware secara detail.
-lshw
-
-# Membaca informasi hardware dari tabel DMI/SMBIOS.
-dmidecode
-
-# Membaca pesan kernel, terutama error hardware dan driver.
-dmesg
-
-# Menampilkan kernel module yang sedang dimuat.
-lsmod
-
-# Melihat metadata dan parameter kernel module.
-modinfo
-
-# Memuat atau melepas kernel module beserta dependency.
-modprobe
-
-# Mengakses manajemen hardware server melalui IPMI.
-ipmitool
-
-# Membaca sensor hardware seperti suhu dan fan.
-sensors
-```
-
-### Automation
-
-```bash
-# Memvalidasi atau melakukan debugging script shell.
-bash -n script.sh
-
-# Memvalidasi atau melakukan debugging script shell.
-bash -x script.sh
-
-# Memvalidasi atau melakukan debugging script shell.
-shellcheck script.sh
-
-# Menjalankan Python atau mengelola package Python.
-python3 -m venv .venv
-
-# Menjalankan Python atau mengelola package Python.
-pip install package
-
-# Menjalankan automation Ansible terhadap host target.
-ansible all -m ping
-
-# Menjalankan automation Ansible terhadap host target.
-ansible-playbook site.yml
-
-# Mengelola version control, branch, commit, merge, atau tag.
-git status
-
-# Mengelola version control, branch, commit, merge, atau tag.
-git tag
-```
-
----
-
-## Checklist Kesiapan Praktik
-
-Catatan ini sudah berguna untuk belajar dan kerja harian kalau kamu bisa melakukan ini tanpa menyalin mentah:
-
-- Menjelaskan boot process dari firmware sampai systemd.
-- Memperbaiki service yang gagal start dari log.
-- Membuat user/group dan mengatur akses minimal.
-- Membaca dan memperbaiki permission, ACL, sudo, dan SSH key issue.
-- Mengelola package dan repository di Debian-based dan RPM-based distro.
-- Mengelola disk, partition, filesystem, mount, LVM, RAID, dan backup.
-- Mengkonfigurasi network, DNS, route, firewall, dan SSH.
-- Menjelaskan dan memperbaiki SELinux denial dasar.
-- Menulis Bash script untuk task admin sederhana.
-- Menulis Python script kecil untuk membaca file/menjalankan command.
-- Menjalankan automation sederhana dengan Ansible.
-- Mengelola container image/container/network/volume.
-- Menjalankan VM dasar dengan KVM/QEMU/libvirt.
-- Menggunakan Git workflow dan tag.
-- Menggunakan monitoring/logging/audit tools untuk isolasi masalah.
-- Menjelaskan praktik aman saat memakai AI/code generation untuk admin Linux.

@@ -1,6 +1,6 @@
 # Security
 
-Catatan security pribadi untuk belajar serius, praktik lab, dan membangun fondasi security.
+Catatan security pribadi untuk belajar serius, praktik command, dan membangun fondasi security.
 
 Catatan ini disusun sebagai baseline security yang lengkap dan praktis: cara memahami risiko, mengamankan sistem, membaca log, melakukan triage, mengelola vulnerability, dan menjalankan incident response dengan bukti.
 
@@ -63,11 +63,6 @@ Area utama:
   - [6.4 Unauthorized Access Investigation](#64-unauthorized-access-investigation)
   - [6.5 Web Attack Triage](#65-web-attack-triage)
   - [6.6 Ransomware Readiness](#66-ransomware-readiness)
-- [Lab Checklist](#lab-checklist)
-- [Ports and Protocols Cepat](#ports-and-protocols-cepat)
-- [Acronym Checklist](#acronym-checklist)
-- [Command Index Cepat](#command-index-cepat)
-- [Checklist Kesiapan Praktik](#checklist-kesiapan-praktik)
 
 ---
 
@@ -86,36 +81,29 @@ Saat belajar atau bekerja, biasakan bertanya:
 - apa dampak bisnis jika sistem down, data bocor, atau account compromise
 - apakah perubahan security memutus operasi
 
-Format command:
+Pola belajar di file ini:
 
-```powershell
-# Setiap command diberi komentar singkat.
-Get-Command
-```
-
-Lab minimum:
-
-| Komponen | Rekomendasi |
-|---|---|
-| Windows client | endpoint logging, Defender, firewall, PowerShell |
-| Windows Server | event log, file share, IIS, hardening |
-| Domain lab | AD, Kerberos, GPO, account lockout |
-| Linux VM | logs, services, firewall, audit, web server |
-| Network tools | packet capture, DNS, HTTP, TLS, port testing |
-| SIEM/log lab | minimal log collection atau local log analysis |
-| Snapshot | sebelum hardening, malware simulation aman, dan incident lab |
-
-Prinsip penting:
-
-- Praktik hanya di lab atau environment yang kamu punya izin.
-- Fokus defensive: visibility, hardening, triage, containment, recovery.
-- Jangan menjalankan exploit, brute force, atau scanning agresif di jaringan yang bukan milikmu.
-- Bukti dulu, asumsi belakangan.
-- Security control yang bagus harus bisa dijelaskan dampaknya ke operasi.
+- baca konsep singkat, lalu langsung jalankan command yang ada di section tersebut
+- sebelum melihat output atau membaca penjelasan lanjutan, prediksi dulu apa yang seharusnya terjadi
+- setelah command selesai, tulis observasi: output penting, gejala, layer/komponen yang terlibat, dan dugaan penyebab
+- ulangi praktik yang sama di hari berikutnya tanpa melihat catatan agar ingatan dibangun lewat recall
+- jalankan command hanya di sistem milik sendiri, lab pribadi, atau environment yang memang kamu diberi izin
 
 ---
 
 ## 1.0 General Security Concepts
+
+**Praktik setelah bab ini:** ubah konsep control dan risk menjadi mapping asset nyata.
+
+```bash
+# Tampilkan service listening yang memperbesar attack surface.
+ss -tulpn
+
+# Cek HTTP response header security dasar.
+curl -I https://example.com/
+```
+
+Catat: asset, threat, vulnerability, preventive control, detective control, response control, dan bukti teknis yang mendukung risk statement.
 
 ### 1.1 Security Controls
 
@@ -405,6 +393,21 @@ Get-WinEvent -LogName "Microsoft-Windows-DriverFrameworks-UserMode/Operational" 
 ---
 
 ## 2.0 Threats, Vulnerabilities, and Mitigations
+
+**Praktik setelah bab ini:** hubungkan threat dengan exposure dan mitigation yang bisa diuji.
+
+```bash
+# Scan port host milik sendiri untuk melihat exposure.
+nmap -sV 127.0.0.1
+
+# Melihat service listening lokal.
+ss -tulpn
+
+# Cari secret pattern sederhana di folder project.
+rg -n "api_key|secret|password|token" .
+```
+
+Catat: exposed service, versi, kemungkinan vulnerability, mitigation, dan false positive yang perlu diverifikasi manual.
 
 ### 2.1 Threat Actors, Motivations, and Capability
 
@@ -720,6 +723,21 @@ systemctl list-unit-files --type=service --state=enabled
 ---
 
 ## 3.0 Security Architecture
+
+**Praktik setelah bab ini:** baca arsitektur sebagai trust boundary, flow, dan control placement.
+
+```bash
+# Trace route untuk melihat path jaringan.
+traceroute example.com
+
+# Test TLS/HTTPS endpoint.
+curl -Iv https://example.com/
+
+# Capture DNS traffic untuk melihat dependency resolution.
+sudo tcpdump -i eth0 -nn port 53
+```
+
+Catat: trust boundary, ingress/egress path, dependency DNS/TLS, segmentation, dan tempat control seharusnya berada.
 
 ### 3.1 Architecture Models
 
@@ -1056,6 +1074,21 @@ Test-NetConnection example.com -Port 443
 ---
 
 ## 4.0 Security Operations
+
+**Praktik setelah bab ini:** lakukan operasi security dengan log, baseline, alert, dan evidence.
+
+```bash
+# Melihat auth log Linux jika tersedia.
+sudo tail -n 50 /var/log/auth.log
+
+# Melihat process dan port listening.
+ss -tulpn
+
+# Melihat file yang berubah baru-baru ini di direktori kerja.
+find . -type f -mtime -1 -ls
+```
+
+Catat: event time, actor, asset, action, source, destination, evidence, dan keputusan triage.
 
 ### 4.1 Secure Baselines and Hardening
 
@@ -1622,6 +1655,18 @@ sudo tail -n 100 /var/log/nginx/access.log
 
 ## 5.0 Security Program Management and Oversight
 
+**Praktik setelah bab ini:** ubah governance menjadi artifact yang bisa diaudit.
+
+```bash
+# Cari file kebijakan atau baseline di repo catatan.
+rg -n "policy|standard|baseline|procedure|risk" .
+
+# Cek file yang berubah untuk melihat scope perubahan.
+git diff --stat
+```
+
+Catat: policy owner, control objective, evidence yang harus dikumpulkan, exception, risk acceptance, dan review date.
+
 ### 5.1 Governance, Policies, Standards, Procedures, and Baselines
 
 Governance memastikan security selaras dengan tujuan organisasi dan risiko bisnis.
@@ -1827,6 +1872,18 @@ Metric awareness:
 ---
 
 ## 6.0 Defensive Playbooks
+
+**Praktik setelah bab ini:** jalankan playbook seperti investigasi kecil dengan timeline.
+
+```bash
+# Tampilkan IP terbanyak dari access log.
+awk '{print $1}' access.log | sort | uniq -c | sort -nr | head
+
+# Cari pattern path traversal sederhana.
+grep -Ei '(\.\./|%2e%2e|%252e)' access.log
+```
+
+Catat: alert source, first seen, last seen, impacted asset, evidence, containment, eradication, recovery, dan lesson learned.
 
 ### 6.1 Phishing Triage
 
@@ -2074,285 +2131,3 @@ wbadmin get versions
 ```
 
 ---
-
-## Lab Checklist
-
-Lab yang sebaiknya dibuat:
-
-| Lab | Target |
-|---|---|
-| Windows event log triage | 4624, 4625, 4672, 4688, 7045 |
-| Linux auth triage | SSH fail/success, sudo, service |
-| Firewall hardening | allowlist admin subnet |
-| TLS certificate review | chain, expiry, hostname |
-| Vulnerability workflow | identify, patch, validate |
-| Phishing triage | URL, attachment hash, user impact |
-| Endpoint suspicious process | process, network, persistence |
-| Web log analysis | top IP, status code, attack pattern |
-| Backup restore test | verify RTO/RPO |
-| IAM access review | privileged groups and stale accounts |
-| AD security review | Domain Admins, delegation, SPN risk |
-| Ransomware tabletop | contain, recover, communicate |
-
----
-
-## Ports and Protocols Cepat
-
-Port bukan untuk dihafal kosong. Port membantu triage traffic, firewall, log, dan exposure.
-
-| Port | Protocol | Service | Security Note |
-|---:|---|---|---|
-| 20/21 | TCP | FTP | legacy, cleartext kecuali FTPS |
-| 22 | TCP | SSH/SFTP | batasi admin source dan gunakan key/MFA jika tersedia |
-| 23 | TCP | Telnet | cleartext, sebaiknya disable |
-| 25 | TCP | SMTP | email server-to-server |
-| 53 | TCP/UDP | DNS | critical untuk AD dan detection |
-| 67/68 | UDP | DHCP | rogue DHCP risk |
-| 69 | UDP | TFTP | tanpa auth, hati-hati PXE/network device |
-| 80 | TCP | HTTP | cleartext web |
-| 88 | TCP/UDP | Kerberos | AD authentication |
-| 110 | TCP | POP3 | legacy mail retrieval |
-| 123 | UDP | NTP | time sync, penting untuk Kerberos/log |
-| 135 | TCP | RPC Endpoint Mapper | Windows management/DC |
-| 137-139 | TCP/UDP | NetBIOS | legacy Windows |
-| 143 | TCP | IMAP | mail retrieval |
-| 161/162 | UDP | SNMP | gunakan SNMPv3 jika bisa |
-| 389 | TCP/UDP | LDAP | directory query |
-| 443 | TCP | HTTPS | web TLS |
-| 445 | TCP | SMB | file sharing, lateral movement risk |
-| 465 | TCP | SMTPS | SMTP over TLS legacy style |
-| 514 | UDP/TCP | Syslog | log forwarding |
-| 587 | TCP | SMTP submission | authenticated mail submission |
-| 636 | TCP | LDAPS | LDAP over TLS |
-| 993 | TCP | IMAPS | IMAP over TLS |
-| 995 | TCP | POP3S | POP3 over TLS |
-| 1433 | TCP | Microsoft SQL Server | database exposure risk |
-| 1521 | TCP | Oracle | database exposure risk |
-| 1812/1813 | UDP | RADIUS auth/accounting | Wi-Fi/VPN AAA |
-| 3306 | TCP | MySQL/MariaDB | database exposure risk |
-| 3389 | TCP/UDP | RDP | jangan expose internet langsung |
-| 5432 | TCP | PostgreSQL | database exposure risk |
-| 5985 | TCP | WinRM HTTP | admin remoting internal |
-| 5986 | TCP | WinRM HTTPS | admin remoting dengan TLS |
-| 6379 | TCP | Redis | sering berbahaya jika exposed |
-| 8080 | TCP | HTTP alternate/proxy/app | cek exposure |
-| 8443 | TCP | HTTPS alternate | admin/app console |
-
-```powershell
-# Test apakah port HTTPS terbuka dari host ini.
-Test-NetConnection example.com -Port 443
-
-# Tampilkan koneksi listening Windows.
-Get-NetTCPConnection -State Listen | Sort-Object LocalPort
-```
-
-```bash
-# Test koneksi TCP ke port SSH.
-nc -vz server.lab.local 22
-
-# Tampilkan port listening Linux.
-ss -tulpen
-```
-
----
-
-## Acronym Checklist
-
-Acronym penting yang sering muncul di security:
-
-| Acronym | Arti |
-|---|---|
-| AAA | Authentication, Authorization, Accounting |
-| ACL | Access Control List |
-| AES | Advanced Encryption Standard |
-| APT | Advanced Persistent Threat |
-| ASR | Attack Surface Reduction |
-| BCP | Business Continuity Plan |
-| BIA | Business Impact Analysis |
-| BYOD | Bring Your Own Device |
-| CA | Certificate Authority |
-| CASB | Cloud Access Security Broker |
-| CIA | Confidentiality, Integrity, Availability |
-| CI/CD | Continuous Integration/Continuous Delivery |
-| CIEM | Cloud Infrastructure Entitlement Management |
-| CSPM | Cloud Security Posture Management |
-| CSP | Cloud Service Provider |
-| CVE | Common Vulnerabilities and Exposures |
-| CVSS | Common Vulnerability Scoring System |
-| DAST | Dynamic Application Security Testing |
-| DLP | Data Loss Prevention |
-| DKIM | DomainKeys Identified Mail |
-| DMARC | Domain-based Message Authentication, Reporting, and Conformance |
-| DRP | Disaster Recovery Plan |
-| EDR | Endpoint Detection and Response |
-| EOL | End of Life |
-| EOS | End of Support |
-| FDE | Full Disk Encryption |
-| GRC | Governance, Risk, and Compliance |
-| HIDS | Host-based Intrusion Detection System |
-| HIPS | Host-based Intrusion Prevention System |
-| HMAC | Hash-based Message Authentication Code |
-| HSM | Hardware Security Module |
-| IaC | Infrastructure as Code |
-| IAM | Identity and Access Management |
-| IDS | Intrusion Detection System |
-| IoC | Indicator of Compromise |
-| IoT | Internet of Things |
-| IPS | Intrusion Prevention System |
-| IR | Incident Response |
-| KDF | Key Derivation Function |
-| KMS | Key Management Service |
-| LDAP | Lightweight Directory Access Protocol |
-| LDAPS | LDAP over TLS |
-| MFA | Multi-Factor Authentication |
-| MDM | Mobile Device Management |
-| MTTD | Mean Time To Detect |
-| MTTR | Mean Time To Respond/Repair |
-| NAC | Network Access Control |
-| NDR | Network Detection and Response |
-| OCSP | Online Certificate Status Protocol |
-| OSINT | Open Source Intelligence |
-| OT | Operational Technology |
-| PAM | Privileged Access Management |
-| PBKDF2 | Password-Based Key Derivation Function 2 |
-| PKI | Public Key Infrastructure |
-| RADIUS | Remote Authentication Dial-In User Service |
-| RBAC | Role-Based Access Control |
-| RPO | Recovery Point Objective |
-| RTO | Recovery Time Objective |
-| SASE | Secure Access Service Edge |
-| SAST | Static Application Security Testing |
-| SIEM | Security Information and Event Management |
-| SLA | Service Level Agreement |
-| SOAR | Security Orchestration, Automation, and Response |
-| SPF | Sender Policy Framework |
-| SSO | Single Sign-On |
-| TLS | Transport Layer Security |
-| UEBA | User and Entity Behavior Analytics |
-| VPN | Virtual Private Network |
-| WAF | Web Application Firewall |
-| XDR | Extended Detection and Response |
-| ZTNA | Zero Trust Network Access |
-
----
-
-## Command Index Cepat
-
-Windows logs:
-
-```powershell
-# Logon gagal.
-Get-WinEvent -FilterHashtable @{LogName="Security"; Id=4625} -MaxEvents 20
-
-# Privileged logon.
-Get-WinEvent -FilterHashtable @{LogName="Security"; Id=4672} -MaxEvents 20
-
-# Service installed.
-Get-WinEvent -FilterHashtable @{LogName="System"; Id=7045} -MaxEvents 20
-
-# Audit log cleared.
-Get-WinEvent -FilterHashtable @{LogName="Security"; Id=1102} -MaxEvents 10
-```
-
-Windows hardening:
-
-```powershell
-# Defender status.
-Get-MpComputerStatus
-
-# Firewall profile.
-Get-NetFirewallProfile
-
-# Local administrators.
-Get-LocalGroupMember Administrators
-
-# BitLocker status.
-Get-BitLockerVolume
-```
-
-Linux triage:
-
-```bash
-# Process list.
-ps auxww
-
-# Network connections.
-sudo ss -tunap
-
-# SSH logs.
-journalctl -u ssh --since "24 hours ago"
-
-# Listening services.
-ss -tulpen
-```
-
-Network and TLS:
-
-```bash
-# HTTP headers.
-curl -I https://example.com
-
-# DNS lookup.
-dig example.com
-
-# TLS certificate details.
-openssl s_client -connect example.com:443 -servername example.com
-
-# Packet capture DNS.
-sudo tcpdump -n port 53
-```
-
-Vulnerability and patching:
-
-```powershell
-# Windows hotfix.
-Get-HotFix | Sort-Object InstalledOn -Descending | Select-Object -First 20
-
-# Pending reboot.
-Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending"
-```
-
-```bash
-# Linux package updates.
-apt list --upgradable
-
-# Linux reboot required.
-test -f /var/run/reboot-required && cat /var/run/reboot-required
-```
-
-AD/IAM:
-
-```powershell
-# Domain Admins members.
-Get-ADGroupMember "Domain Admins"
-
-# Password never expires.
-Get-ADUser -Filter {Enabled -eq $true -and PasswordNeverExpires -eq $true} -Properties PasswordNeverExpires
-
-# Account lockout events.
-Get-WinEvent -FilterHashtable @{LogName="Security"; Id=4740} -MaxEvents 20
-```
-
----
-
-## Checklist Kesiapan Praktik
-
-Kamu dianggap cukup siap untuk baseline security dan kerja security engineer dasar jika bisa:
-
-- menjelaskan control preventive, detective, corrective, deterrent, compensating, directive
-- menerapkan CIA, AAA, non-repudiation, least privilege, dan Zero Trust ke kasus nyata
-- menjelaskan symmetric/asymmetric encryption, hashing, digital signature, PKI, dan TLS
-- membedakan threat actor, threat vector, attack surface, vulnerability, exploit, dan risk
-- mengenali malware, phishing, password attacks, network attacks, web attacks, cloud risks, dan supply chain risks
-- memilih mitigation yang sesuai: patching, hardening, segmentation, isolation, monitoring, backup
-- mendesain zone sederhana: internet, DMZ, internal, server, management, identity, backup
-- memahami cloud shared responsibility dan risiko IAM/cloud misconfiguration
-- mengklasifikasikan data dan memilih control data protection
-- menjelaskan RTO, RPO, BCP, DRP, backup immutable/offline, dan restore testing
-- membaca log Windows, Linux, web, DNS, firewall, dan endpoint security
-- menjalankan triage phishing, endpoint suspicious behavior, unauthorized access, dan web attack
-- menjalankan vulnerability management dari finding sampai validation
-- melakukan access review untuk privileged users, local admins, dan service accounts
-- menjelaskan governance, policy, standard, procedure, baseline, risk register, BIA, dan third-party risk
-- memahami audit, assessment, penetration test governance, dan rules of engagement
-- membuat playbook security yang punya evidence, containment, remediation, validation, dan lessons learned

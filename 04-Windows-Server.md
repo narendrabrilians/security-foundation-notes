@@ -1,6 +1,6 @@
 # Windows Server
 
-Catatan Windows Server pribadi untuk belajar serius, praktik lab, dan membangun fondasi administrasi Windows Server.
+Catatan Windows Server pribadi untuk belajar serius, praktik command, dan membangun fondasi administrasi Windows Server.
 
 Fokus halaman ini adalah Windows Server sebagai platform infrastruktur: bagaimana server dibangun, dikelola, diamankan, dimonitor, dan dipulihkan. Active Directory hanya dibahas sebagai jembatan karena pembahasan domain controller, Kerberos domain, Group Policy, replication, FSMO, trusts, dan AD security lebih rapi dibuat di `Active-Directory.md`.
 
@@ -94,9 +94,6 @@ Area utama:
   - [10.2 Domain Join and DNS Dependency](#102-domain-join-and-dns-dependency)
   - [10.3 Group Policy Impact on Servers](#103-group-policy-impact-on-servers)
   - [10.4 What Moves to Active-Directory.md](#104-what-moves-to-active-directorymd)
-- [Lab Checklist](#lab-checklist)
-- [Command Index Cepat](#command-index-cepat)
-- [Checklist Kesiapan Praktik](#checklist-kesiapan-praktik)
 
 ---
 
@@ -112,35 +109,32 @@ Windows Server harus dipelajari sebagai sistem operasi sekaligus platform servic
 - apakah masalah terjadi di OS, role, network, storage, authentication, atau dependency eksternal
 - apakah service harus tetap hidup saat maintenance, reboot, patching, atau node failure
 
-Format command:
+Pola belajar di file ini:
 
-```powershell
-# Setiap command diberi komentar singkat.
-Get-Command
-```
-
-Lab minimum:
-
-| Komponen | Rekomendasi |
-|---|---|
-| VM Windows Server | 2 sampai 3 VM untuk role, file server, dan clustering lab ringan |
-| VM Windows Client | 1 VM Windows 10/11 untuk test akses client |
-| Network | satu subnet lab dengan static IP dan DNS internal |
-| Snapshot | sebelum install role, patch besar, domain join, dan hardening |
-| Tools | PowerShell, Server Manager, Windows Admin Center, Event Viewer, PerfMon |
-| Optional | satu Linux VM untuk test SMB, DNS, HTTP, dan network troubleshooting |
-
-Prinsip lab:
-
-1. Catat state awal sebelum perubahan.
-2. Ubah satu hal dalam satu waktu.
-3. Verifikasi dari sisi server dan client.
-4. Ambil log sebelum reboot jika service sedang incident.
-5. Jangan memakai domain controller sebagai file server, app server, atau server eksperimen.
+- baca konsep singkat, lalu langsung jalankan command yang ada di section tersebut
+- sebelum melihat output atau membaca penjelasan lanjutan, prediksi dulu apa yang seharusnya terjadi
+- setelah command selesai, tulis observasi: output penting, gejala, layer/komponen yang terlibat, dan dugaan penyebab
+- ulangi praktik yang sama di hari berikutnya tanpa melihat catatan agar ingatan dibangun lewat recall
+- jalankan command hanya di sistem milik sendiri, lab pribadi, atau environment yang memang kamu diberi izin
 
 ---
 
 ## 1.0 Windows Server Fundamentals
+
+**Praktik setelah bab ini:** identifikasi role server, management plane, dan service dependency.
+
+```powershell
+# Tampilkan informasi OS server.
+Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, OsBuildNumber
+
+# Tampilkan role dan feature yang terpasang.
+Get-WindowsFeature | Where-Object Installed
+
+# Tampilkan service running.
+Get-Service | Where-Object Status -eq Running
+```
+
+Catat: role utama, feature pendukung, service dependency, port yang mungkin terbuka, dan cara admin mengelola server.
 
 ### 1.1 Posisi Windows Server di Infrastruktur
 
@@ -364,6 +358,21 @@ w32tm /query /status
 
 ## 2.0 Deployment and Lifecycle
 
+**Praktik setelah bab ini:** perlakukan build server sebagai state yang bisa diverifikasi.
+
+```powershell
+# Melihat hotfix/patch yang terpasang.
+Get-HotFix | Sort-Object InstalledOn -Descending | Select-Object -First 10
+
+# Melihat konfigurasi waktu.
+w32tm /query /status
+
+# Melihat firewall profile.
+Get-NetFirewallProfile
+```
+
+Catat: patch level, waktu/NTP source, baseline firewall, perubahan terakhir, dan rollback plan sebelum perubahan besar.
+
 ### 2.1 Installation, Initial Configuration, dan Golden Image
 
 Deployment server bukan hanya "install OS". Deployment yang baik menghasilkan server yang konsisten, bisa diaudit, bisa dipulihkan, dan mudah dikelola.
@@ -574,6 +583,21 @@ Runbook restore minimum:
 ---
 
 ## 3.0 Network Services
+
+**Praktik setelah bab ini:** uji DNS, DHCP, dan konektivitas service dari server side.
+
+```powershell
+# Query DNS A record.
+Resolve-DnsName fs01.lab.local
+
+# Query SRV record domain controller.
+Resolve-DnsName _ldap._tcp.dc._msdcs.lab.local -Type SRV
+
+# Test koneksi SMB ke file server.
+Test-NetConnection fs01.lab.local -Port 445
+```
+
+Catat: DNS server yang menjawab, record yang ditemukan, port service, firewall path, dan dependency domain.
 
 ### 3.1 Static IP, NIC, Route, dan DNS Client
 
@@ -848,6 +872,24 @@ Get-WinEvent -LogName "System" -MaxEvents 50 | Where-Object ProviderName -like "
 ---
 
 ## 4.0 Storage and File Services
+
+**Praktik setelah bab ini:** buktikan storage, share, NTFS ACL, dan akses client.
+
+```powershell
+# Tampilkan volume dan filesystem.
+Get-Volume
+
+# Tampilkan SMB share.
+Get-SmbShare
+
+# Tampilkan permission SMB share.
+Get-SmbShareAccess
+
+# Tampilkan ACL folder.
+Get-Acl D:\Shares | Format-List
+```
+
+Catat: volume health, share path, share permission, NTFS permission, inheritance, dan perbedaan share ACL vs NTFS ACL.
 
 ### 4.1 Disk, Volume, NTFS, ReFS, dan Mount Point
 
@@ -1131,6 +1173,21 @@ Get-PhysicalDisk
 
 ## 5.0 Web, App, and Remote Desktop Services
 
+**Praktik setelah bab ini:** validasi web/RDS dari service, binding, certificate, dan port.
+
+```powershell
+# Test akses HTTP lokal.
+Invoke-WebRequest http://localhost -UseBasicParsing
+
+# Test port HTTPS.
+Test-NetConnection localhost -Port 443
+
+# Tampilkan listener TCP.
+Get-NetTCPConnection -State Listen
+```
+
+Catat: status code, binding, certificate, listening port, firewall rule, dan log service yang membuktikan request diterima.
+
 ### 5.1 IIS Architecture and Hosting
 
 IIS adalah web server Windows. Untuk admin dan security engineer, IIS harus dipahami dari sisi site, binding, application pool, worker process, module, logging, certificate, dan identity.
@@ -1290,6 +1347,21 @@ Get-PrinterDriver
 
 ## 6.0 Virtualization and Containers
 
+**Praktik setelah bab ini:** lihat VM sebagai compute, storage, network, checkpoint, dan isolation boundary.
+
+```powershell
+# Tampilkan VM Hyper-V.
+Get-VM
+
+# Tampilkan virtual switch.
+Get-VMSwitch
+
+# Tampilkan checkpoint VM.
+Get-VMSnapshot -VMName *
+```
+
+Catat: VM state, vSwitch type, network mapping, disk path, checkpoint risk, dan dependency storage/network.
+
 ### 6.1 Hyper-V Architecture
 
 Hyper-V adalah hypervisor type-1 Microsoft. Setelah role Hyper-V aktif, Windows berjalan sebagai parent partition yang mengelola child partitions atau VM. Hypervisor mengatur CPU scheduling, memory isolation, interrupt, dan akses device virtual.
@@ -1447,6 +1519,21 @@ Get-Service | Where-Object Name -match "docker|container"
 ---
 
 ## 7.0 High Availability and Scale
+
+**Praktik setelah bab ini:** bedakan HA, backup, load balancing, dan disaster recovery.
+
+```powershell
+# Tampilkan cluster jika feature tersedia.
+Get-Cluster
+
+# Tampilkan cluster node jika cluster tersedia.
+Get-ClusterNode
+
+# Tampilkan resource cluster jika cluster tersedia.
+Get-ClusterResource
+```
+
+Catat: quorum, node state, resource owner, failover behavior, dan bagian mana yang tetap single point of failure.
 
 ### 7.1 Failover Clustering Concepts
 
@@ -1634,6 +1721,21 @@ Test-NetConnection 10.10.10.81 -Port 443
 ---
 
 ## 8.0 Security and Hardening
+
+**Praktik setelah bab ini:** validasi hardening sebagai konfigurasi yang bisa dibuktikan.
+
+```powershell
+# Tampilkan firewall profile.
+Get-NetFirewallProfile
+
+# Tampilkan local administrators.
+Get-LocalGroupMember Administrators
+
+# Tampilkan audit policy.
+auditpol /get /category:*
+```
+
+Catat: admin lokal, inbound exposure, audit coverage, service yang tidak perlu, dan kontrol yang bisa memutus operasi jika terlalu agresif.
 
 ### 8.1 Security Baseline and Local Policy
 
@@ -1851,6 +1953,21 @@ wevtutil sl Security /ms:1073741824
 
 ## 9.0 Monitoring and Troubleshooting
 
+**Praktik setelah bab ini:** gunakan log dan counter untuk membuktikan health server.
+
+```powershell
+# Ambil error System log terbaru.
+Get-WinEvent -FilterHashtable @{LogName='System'; Level=2} -MaxEvents 30
+
+# Melihat counter CPU dan memory.
+Get-Counter "\Processor(_Total)\% Processor Time","\Memory\Available MBytes"
+
+# Test koneksi ke service SMB.
+Test-NetConnection server.lab.local -Port 445
+```
+
+Catat: event ID, timestamp, resource pressure, service impact, dan command validasi setelah recovery.
+
 ### 9.1 Event Logs, Reliability, and Evidence
 
 Troubleshooting server harus dimulai dari bukti. Jangan langsung reboot kecuali service impact membutuhkan tindakan cepat dan bukti sudah cukup atau bisa dikumpulkan.
@@ -2039,6 +2156,21 @@ bcdedit /enum
 
 ## 10.0 Active Directory Bridge
 
+**Praktik setelah bab ini:** buktikan kapan masalah server sebenarnya masalah identity/DNS/domain.
+
+```powershell
+# Query domain DNS.
+Resolve-DnsName lab.local
+
+# Query SRV record domain controller.
+Resolve-DnsName _ldap._tcp.dc._msdcs.lab.local -Type SRV
+
+# Test secure channel domain.
+Test-ComputerSecureChannel
+```
+
+Catat: DNS resolver, DC locator, secure channel state, time sync, dan apakah server memakai identity domain dengan benar.
+
 ### 10.1 Member Server vs Domain Controller
 
 Member server adalah Windows Server yang join domain tetapi bukan domain controller. Domain controller menjalankan AD DS dan menyimpan directory database. Jangan mencampur peran tanpa alasan kuat.
@@ -2149,156 +2281,3 @@ Bagian berikut sebaiknya tidak diperdalam di file ini agar Windows Server tetap 
 Setelah file ini matang, lanjut paling logis adalah `Active-Directory.md`.
 
 ---
-
-## Lab Checklist
-
-Lab yang sebaiknya dibuat:
-
-| Lab | Target |
-|---|---|
-| Install Server Core | bisa manage server tanpa GUI lokal |
-| Static IP dan DNS | server punya network identity stabil |
-| DNS Server | membuat zone, record, forwarder, troubleshooting |
-| DHCP Server | membuat scope, option, reservation, cek lease |
-| File Server SMB | membuat share, ACL, ABE, audit |
-| FSRM | quota dan file screening |
-| IIS | site, binding, app pool, log |
-| Hyper-V | switch, VM, checkpoint, VHDX |
-| Backup Restore | test VSS dan restore file |
-| Hardening | firewall, audit policy, disable service |
-| Monitoring | PerfMon counter dan event query |
-| Domain Join | member server join domain lab |
-
-Mini scenario:
-
-| Scenario | Yang Dilatih |
-|---|---|
-| Client tidak dapat IP | DHCP scope, relay, event, lease |
-| File share access denied | share permission, NTFS ACL, group |
-| Web down setelah patch | IIS log, app pool, event, rollback |
-| Server lambat | CPU, memory, disk latency, network |
-| DNS resolve salah | cache, zone, record, forwarder |
-| Backup gagal | VSS writer, free space, event |
-| RDP diserang brute force | firewall, event 4625, lockout, exposure |
-
----
-
-## Command Index Cepat
-
-System:
-
-```powershell
-# Tampilkan informasi OS dan build.
-Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, OsBuildNumber
-
-# Tampilkan role dan feature terinstall.
-Get-WindowsFeature | Where-Object Installed
-
-# Cek pending reboot CBS.
-Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending"
-```
-
-Network:
-
-```powershell
-# Tampilkan IP configuration.
-Get-NetIPConfiguration
-
-# Test port TCP.
-Test-NetConnection server.lab.local -Port 445
-
-# Resolve DNS name.
-Resolve-DnsName server.lab.local
-
-# Tampilkan route table IPv4.
-Get-NetRoute -AddressFamily IPv4
-```
-
-Roles:
-
-```powershell
-# Install DNS Server.
-Install-WindowsFeature DNS -IncludeManagementTools
-
-# Install DHCP Server.
-Install-WindowsFeature DHCP -IncludeManagementTools
-
-# Install File Server.
-Install-WindowsFeature FS-FileServer -IncludeManagementTools
-
-# Install IIS.
-Install-WindowsFeature Web-Server -IncludeManagementTools
-```
-
-SMB:
-
-```powershell
-# Tampilkan SMB shares.
-Get-SmbShare
-
-# Tampilkan SMB sessions.
-Get-SmbSession
-
-# Tampilkan SMB open files.
-Get-SmbOpenFile
-
-# Tampilkan konfigurasi SMB server.
-Get-SmbServerConfiguration
-```
-
-Security:
-
-```powershell
-# Tampilkan audit policy.
-auditpol /get /category:*
-
-# Tampilkan firewall profile.
-Get-NetFirewallProfile
-
-# Cek Defender status.
-Get-MpComputerStatus
-
-# Ambil event logon gagal.
-Get-WinEvent -FilterHashtable @{LogName="Security"; Id=4625} -MaxEvents 20
-```
-
-Troubleshooting:
-
-```powershell
-# Ambil error System terbaru.
-Get-WinEvent -FilterHashtable @{LogName="System"; Level=2} -MaxEvents 20
-
-# Tampilkan process top CPU.
-Get-Process | Sort-Object CPU -Descending | Select-Object -First 10
-
-# Repair component store.
-DISM /Online /Cleanup-Image /RestoreHealth
-
-# Scan protected system files.
-sfc /scannow
-```
-
----
-
-## Checklist Kesiapan Praktik
-
-Kamu dianggap cukup siap memakai Windows Server untuk lab dan kerja operasional jika bisa:
-
-- menjelaskan perbedaan Windows Server, Windows client, member server, dan domain controller
-- memilih Server Core vs Desktop Experience berdasarkan workload
-- install dan remove role/feature dengan PowerShell
-- mengatur static IP, DNS client, route, firewall profile, dan time sync
-- membuat DNS zone, record, forwarder, dan troubleshoot DNS client/server
-- membuat DHCP scope, option, reservation, dan membaca lease/audit
-- membuat SMB share dengan NTFS ACL yang benar
-- menjelaskan effective permission dari share permission dan NTFS permission
-- memakai FSRM untuk quota/file screening dasar
-- install IIS, membaca binding, app pool, worker process, dan log
-- menjelaskan Hyper-V switch, VM, VHDX, checkpoint, dan integration services
-- menjelaskan konsep failover cluster, quorum, witness, dan CSV
-- memahami fungsi backup, VSS writer, restore test, RPO, dan RTO
-- menerapkan baseline security tanpa memutus workload
-- membaca event log penting untuk logon, service install, PowerShell, Defender, DNS, DHCP, SMB
-- memakai PerfMon/Get-Counter untuk membedakan CPU, memory, disk, dan network bottleneck
-- melakukan domain join dengan memahami dependency DNS dan time
-- tahu batas file ini dan siap lanjut ke `Active-Directory.md`
