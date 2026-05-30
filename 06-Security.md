@@ -1,8 +1,15 @@
 # Security
 
-Catatan security pribadi untuk belajar serius, praktik command, dan membangun fondasi security.
+Sumber resmi utama:
 
-Catatan ini disusun sebagai baseline security yang lengkap dan praktis: cara memahami risiko, mengamankan sistem, membaca log, melakukan triage, mengelola vulnerability, dan menjalankan incident response dengan bukti.
+- NIST Cybersecurity Framework: https://www.nist.gov/cyberframework
+- NIST Computer Security Resource Center: https://csrc.nist.gov/
+- NIST SP 800-207 Zero Trust Architecture: https://csrc.nist.gov/pubs/sp/800/207/final
+- NIST National Vulnerability Database: https://nvd.nist.gov/
+- CISA Resources and Tools: https://www.cisa.gov/resources-tools
+- CISA Known Exploited Vulnerabilities Catalog: https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+- OWASP Top 10: https://owasp.org/www-project-top-ten/
+- OWASP Cheat Sheet Series: https://cheatsheetseries.owasp.org/
 
 Area utama:
 
@@ -16,7 +23,6 @@ Area utama:
 
 ## Daftar Isi
 
-- [0. Cara Pakai Catatan Ini](#0-cara-pakai-catatan-ini)
 - [1.0 General Security Concepts](#10-general-security-concepts)
   - [1.1 Security Controls](#11-security-controls)
   - [1.2 CIA, AAA, Non-Repudiation, dan Zero Trust](#12-cia-aaa-non-repudiation-dan-zero-trust)
@@ -66,34 +72,9 @@ Area utama:
 
 ---
 
-## 0. Cara Pakai Catatan Ini
-
-Security tidak cukup dipahami sebagai daftar tool. Security engineer harus bisa menghubungkan konsep, bukti, risiko, kontrol, dan keputusan operasional.
-
-Saat belajar atau bekerja, biasakan bertanya:
-
-- asset apa yang dilindungi
-- threat apa yang paling masuk akal
-- vulnerability atau misconfiguration apa yang membuka risiko
-- control apa yang mencegah, mendeteksi, atau merespons masalah
-- log mana yang membuktikan kejadian
-- siapa owner remediation
-- apa dampak bisnis jika sistem down, data bocor, atau account compromise
-- apakah perubahan security memutus operasi
-
-Pola belajar di file ini:
-
-- baca konsep singkat, lalu langsung jalankan command yang ada di section tersebut
-- sebelum melihat output atau membaca penjelasan lanjutan, prediksi dulu apa yang seharusnya terjadi
-- setelah command selesai, tulis observasi: output penting, gejala, layer/komponen yang terlibat, dan dugaan penyebab
-- ulangi praktik yang sama di hari berikutnya tanpa melihat catatan agar ingatan dibangun lewat recall
-- jalankan command hanya di sistem milik sendiri, lab pribadi, atau environment yang memang kamu diberi izin
-
----
-
 ## 1.0 General Security Concepts
 
-**Praktik setelah bab ini:** ubah konsep control dan risk menjadi mapping asset nyata.
+**Fokus teknis:** ubah konsep control dan risk menjadi mapping asset nyata.
 
 ```bash
 # Tampilkan service listening yang memperbesar attack surface.
@@ -103,7 +84,7 @@ ss -tulpn
 curl -I https://example.com/
 ```
 
-Catat: asset, threat, vulnerability, preventive control, detective control, response control, dan bukti teknis yang mendukung risk statement.
+Aspek teknis: asset, threat, vulnerability, preventive control, detective control, response control, dan data teknis yang mendukung risk statement.
 
 ### 1.1 Security Controls
 
@@ -163,7 +144,7 @@ AAA:
 
 | Komponen | Arti | Contoh |
 |---|---|---|
-| Authentication | membuktikan siapa kamu | password, certificate, MFA |
+| Authentication | menunjukkan identitas subjek | password, certificate, MFA |
 | Authorization | menentukan boleh akses apa | group, role, ACL |
 | Accounting | mencatat aktivitas | audit log, SIEM |
 
@@ -186,7 +167,7 @@ whoami /groups
 # Tampilkan privilege user saat ini.
 whoami /priv
 
-# Ambil event logon sukses sebagai accounting evidence.
+# Ambil event logon sukses untuk membaca accounting log.
 Get-WinEvent -FilterHashtable @{LogName="Security"; Id=4624} -MaxEvents 10
 ```
 
@@ -205,7 +186,7 @@ Komponen change:
 | approval | otorisasi perubahan |
 | implementation plan | langkah eksekusi |
 | rollback plan | cara kembali jika gagal |
-| validation | bukti perubahan berhasil |
+| validation | indikator perubahan berhasil |
 | post-change review | pembelajaran |
 
 Jenis change:
@@ -347,7 +328,7 @@ Physical controls:
 | biometric | verifikasi fisik user |
 | mantrap | mencegah tailgating |
 | lock/cabinet | melindungi device dan rack |
-| CCTV | deterrent dan evidence |
+| CCTV | deterrent dan rekaman aktivitas |
 | security guard | kontrol manusia |
 | cable lock | mengurangi pencurian laptop |
 | port blocker | mencegah akses port fisik |
@@ -394,7 +375,7 @@ Get-WinEvent -LogName "Microsoft-Windows-DriverFrameworks-UserMode/Operational" 
 
 ## 2.0 Threats, Vulnerabilities, and Mitigations
 
-**Praktik setelah bab ini:** hubungkan threat dengan exposure dan mitigation yang bisa diuji.
+**Fokus teknis:** hubungkan threat dengan exposure dan mitigation yang bisa diuji.
 
 ```bash
 # Scan port host milik sendiri untuk melihat exposure.
@@ -407,7 +388,7 @@ ss -tulpn
 rg -n "api_key|secret|password|token" .
 ```
 
-Catat: exposed service, versi, kemungkinan vulnerability, mitigation, dan false positive yang perlu diverifikasi manual.
+Aspek teknis: exposed service, versi, kemungkinan vulnerability, mitigation, dan false positive yang perlu diverifikasi manual.
 
 ### 2.1 Threat Actors, Motivations, and Capability
 
@@ -724,7 +705,7 @@ systemctl list-unit-files --type=service --state=enabled
 
 ## 3.0 Security Architecture
 
-**Praktik setelah bab ini:** baca arsitektur sebagai trust boundary, flow, dan control placement.
+**Fokus teknis:** baca arsitektur sebagai trust boundary, flow, dan control placement.
 
 ```bash
 # Trace route untuk melihat path jaringan.
@@ -737,7 +718,7 @@ curl -Iv https://example.com/
 sudo tcpdump -i eth0 -nn port 53
 ```
 
-Catat: trust boundary, ingress/egress path, dependency DNS/TLS, segmentation, dan tempat control seharusnya berada.
+Aspek teknis: trust boundary, ingress/egress path, dependency DNS/TLS, segmentation, dan tempat control seharusnya berada.
 
 ### 3.1 Architecture Models
 
@@ -866,7 +847,7 @@ Container risks:
 
 IoT/ICS:
 
-| Area | Catatan |
+| Area | Keterangan |
 |---|---|
 | IoT | device banyak, lifecycle panjang, patch sulit |
 | ICS/OT | safety dan availability prioritas sangat tinggi |
@@ -1075,7 +1056,7 @@ Test-NetConnection example.com -Port 443
 
 ## 4.0 Security Operations
 
-**Praktik setelah bab ini:** lakukan operasi security dengan log, baseline, alert, dan evidence.
+**Fokus teknis:** lakukan operasi security dengan log, baseline, alert, dan data teknis.
 
 ```bash
 # Melihat auth log Linux jika tersedia.
@@ -1088,7 +1069,7 @@ ss -tulpn
 find . -type f -mtime -1 -ls
 ```
 
-Catat: event time, actor, asset, action, source, destination, evidence, dan keputusan triage.
+Aspek teknis: event time, actor, asset, action, source, destination, data teknis, dan keputusan triage.
 
 ### 4.1 Secure Baselines and Hardening
 
@@ -1281,7 +1262,7 @@ test -f /var/run/reboot-required && cat /var/run/reboot-required
 
 ### 4.5 Monitoring, Logging, SIEM, SOAR, EDR, and XDR
 
-Monitoring security mengubah aktivitas sistem menjadi bukti. Log harus punya timestamp benar, source jelas, dan retention cukup.
+Monitoring security mengubah aktivitas sistem menjadi data. Log harus punya timestamp benar, source jelas, dan retention cukup.
 
 Tool kategori:
 
@@ -1341,7 +1322,7 @@ Get-WinEvent -FilterHashtable @{LogName="System"; Id=7045} -MaxEvents 20
 # Ambil PowerShell operational log.
 Get-WinEvent -LogName "Microsoft-Windows-PowerShell/Operational" -MaxEvents 30
 
-# Export Security log untuk evidence.
+# Export Security log untuk data teknis.
 wevtutil epl Security C:\Temp\Security.evtx
 ```
 
@@ -1426,8 +1407,8 @@ Forensics concepts:
 
 | Konsep | Arti |
 |---|---|
-| evidence integrity | bukti tidak berubah |
-| chain of custody | catatan siapa memegang bukti |
+| data integrity | data tidak berubah |
+| chain of custody | catatan siapa memegang data |
 | timeline | urutan kejadian |
 | volatile data | data hilang saat reboot |
 | disk image | salinan forensic disk |
@@ -1442,7 +1423,7 @@ Triage harus menjawab:
 - apakah ada lateral movement
 - data apa berisiko
 - containment apa yang aman
-- bukti apa harus disimpan
+- data apa harus disimpan
 
 ```powershell
 # Tampilkan process berjalan untuk triage awal.
@@ -1483,7 +1464,7 @@ Use case:
 | enrichment | lookup IP/domain/hash |
 | containment | disable account, isolate endpoint |
 | notification | buat ticket, kirim alert |
-| evidence collection | export logs |
+| log collection | export logs |
 | compliance check | baseline drift |
 | reporting | vulnerability SLA |
 
@@ -1655,17 +1636,17 @@ sudo tail -n 100 /var/log/nginx/access.log
 
 ## 5.0 Security Program Management and Oversight
 
-**Praktik setelah bab ini:** ubah governance menjadi artifact yang bisa diaudit.
+**Fokus teknis:** ubah governance menjadi artifact yang bisa diaudit.
 
 ```bash
-# Cari file kebijakan atau baseline di repo catatan.
+# Cari file kebijakan atau baseline di repository.
 rg -n "policy|standard|baseline|procedure|risk" .
 
 # Cek file yang berubah untuk melihat scope perubahan.
 git diff --stat
 ```
 
-Catat: policy owner, control objective, evidence yang harus dikumpulkan, exception, risk acceptance, dan review date.
+Aspek teknis: policy owner, control objective, data teknis yang harus dikumpulkan, exception, risk acceptance, dan review date.
 
 ### 5.1 Governance, Policies, Standards, Procedures, and Baselines
 
@@ -1826,7 +1807,7 @@ Jenis:
 | internal audit | kepatuhan internal |
 | external audit | assurance pihak luar |
 | vulnerability assessment | menemukan vulnerability |
-| penetration test | membuktikan exploitability dalam scope |
+| penetration test | menunjukkan exploitability dalam scope |
 | red team | menguji detection/response secara adversarial |
 | tabletop exercise | latihan proses |
 | control assessment | efektivitas control |
@@ -1861,7 +1842,7 @@ Materi awareness:
 
 Metric awareness:
 
-| Metric | Catatan |
+| Metric | Keterangan |
 |---|---|
 | report rate | user melaporkan phishing |
 | click rate | indikator risiko, jangan jadi shame tool |
@@ -1873,7 +1854,7 @@ Metric awareness:
 
 ## 6.0 Defensive Playbooks
 
-**Praktik setelah bab ini:** jalankan playbook seperti investigasi kecil dengan timeline.
+**Fokus teknis:** jalankan playbook seperti investigasi kecil dengan timeline.
 
 ```bash
 # Tampilkan IP terbanyak dari access log.
@@ -1883,15 +1864,15 @@ awk '{print $1}' access.log | sort | uniq -c | sort -nr | head
 grep -Ei '(\.\./|%2e%2e|%252e)' access.log
 ```
 
-Catat: alert source, first seen, last seen, impacted asset, evidence, containment, eradication, recovery, dan lesson learned.
+Aspek teknis: alert source, first seen, last seen, impacted asset, data teknis, containment, eradication, recovery, dan lesson learned.
 
 ### 6.1 Phishing Triage
 
 Tujuan phishing triage adalah menentukan apakah email berbahaya, siapa terdampak, apakah credential/data sudah bocor, dan tindakan containment.
 
-Evidence:
+Data teknis:
 
-| Evidence | Contoh |
+| Data teknis | Contoh |
 |---|---|
 | header | SPF, DKIM, DMARC, sender path |
 | URL | domain, redirect, reputation |
@@ -1930,7 +1911,7 @@ sha256sum attachment.bin
 
 Endpoint triage mencari tanda compromise pada process, network, persistence, user activity, dan security tool status.
 
-Evidence:
+Data teknis:
 
 | Area | Cek |
 |---|---|
@@ -1997,7 +1978,7 @@ SLA contoh:
 | low | sesuai cycle |
 
 ```powershell
-# Export installed hotfix untuk evidence remediation.
+# Export installed hotfix untuk dokumentasi remediation.
 Get-HotFix | Sort-Object InstalledOn -Descending | Export-Csv C:\Temp\hotfix.csv -NoTypeInformation
 
 # Cek pending reboot setelah patch.

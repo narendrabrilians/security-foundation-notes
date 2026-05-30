@@ -1,8 +1,14 @@
 # Network
 
-Catatan networking pribadi untuk belajar serius, praktik command, dan membangun fondasi network yang kuat.
+Sumber resmi utama:
 
-Pembahasan diarahkan ke pemahaman konsep, praktik hands-on, troubleshooting berbasis bukti, dan detail low-level yang sering dibutuhkan saat menganalisis jaringan.
+- RFC Editor: https://www.rfc-editor.org/
+- IETF Datatracker: https://datatracker.ietf.org/
+- IANA Protocol Registries: https://www.iana.org/protocols
+- IANA Service Name and Port Number Registry: https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
+- RFC 5737 IPv4 Address Blocks Reserved for Documentation: https://www.rfc-editor.org/rfc/rfc5737
+- IEEE 802 LAN/MAN Standards Committee: https://www.ieee802.org/
+- Wi-Fi Alliance: https://www.wi-fi.org/
 
 Area utama:
 
@@ -16,7 +22,6 @@ Area utama:
 
 ## Daftar Isi
 
-- [0. Cara Pakai Catatan Ini](#0-cara-pakai-catatan-ini)
 - [1.0 Networking Concepts](#10-networking-concepts)
   - [1.1 OSI Model](#11-osi-model)
   - [1.2 Network Appliances, Applications, and Functions](#12-network-appliances-applications-and-functions)
@@ -59,46 +64,9 @@ Area utama:
 
 ---
 
-## 0. Cara Pakai Catatan Ini
-
-Catatan ini dipakai sebagai baseline konsep sekaligus field notes untuk kerja nyata. Jangan hanya menghafal port atau definisi. Biasakan menjawab:
-
-- masalahnya ada di layer mana
-- traffic yang gagal itu source, destination, port, dan protocol apa
-- perangkat mana yang seharusnya forwarding, filtering, routing, atau resolving
-- output command apa yang membuktikan dugaan
-- perubahan mana yang bisa memutus akses
-- state apa yang berubah: ARP/ND, route, conntrack, TCP state, DNS cache, atau firewall session
-- apakah gejala terjadi di control plane, data plane, atau management plane
-
-Level yang ditargetkan:
-
-| Level | Yang Harus Bisa Dilakukan |
-|---|---|
-| Administrator | membaca IP, route, DNS, DHCP, firewall, dan service state |
-| Network engineer | memahami forwarding path, VLAN, routing, HA, wireless, dan security control |
-| Senior/operator | membuktikan root cause dengan packet capture, counters, logs, state table, dan timeline perubahan |
-
-Prinsip catatan senior:
-
-- Selalu pisahkan fakta, dugaan, dan tindakan.
-- Jangan percaya satu output command tanpa pembanding dari layer lain.
-- Untuk setiap incident, cari `source`, `destination`, `protocol`, `port`, `state`, `path`, dan `last change`.
-- Untuk setiap fix, siapkan validasi dan rollback.
-
-Pola belajar di file ini:
-
-- baca konsep singkat, lalu langsung jalankan command yang ada di section tersebut
-- sebelum melihat output atau membaca penjelasan lanjutan, prediksi dulu apa yang seharusnya terjadi
-- setelah command selesai, tulis observasi: output penting, gejala, layer/komponen yang terlibat, dan dugaan penyebab
-- ulangi praktik yang sama di hari berikutnya tanpa melihat catatan agar ingatan dibangun lewat recall
-- jalankan command hanya di sistem milik sendiri, lab pribadi, atau environment yang memang kamu diberi izin
-
----
-
 ## 1.0 Networking Concepts
 
-**Praktik setelah bab ini:** buktikan konsep layer, IP, DNS, dan port dengan traffic nyata.
+**Fokus teknis:** layer, IP, DNS, dan port bisa dibaca dari traffic nyata.
 
 ```bash
 # Melihat IP address dan interface lokal.
@@ -114,9 +82,32 @@ dig example.com
 curl -v https://example.com/
 ```
 
-Catat: source IP, destination IP, port, protocol, DNS answer, route yang dipilih, dan layer mana yang sedang kamu buktikan.
+Aspek teknis: source IP, destination IP, port, protocol, DNS answer, route yang dipilih, dan layer yang sedang terlihat.
 
-Bagian ini membahas fondasi: OSI model, device, cloud, protocol, media, topology, IPv4, dan konsep network modern.
+Cakupan: OSI model, device, cloud, protocol, media, topology, IPv4, dan konsep network modern.
+
+Cara membaca contoh command:
+
+| Command | Yang diamati | Makna |
+|---|---|---|
+| `ip addr show` | interface, address, state | identitas lokal host dan interface yang aktif |
+| `ip route show` | default route, next-hop, interface | jalur yang dipakai host untuk keluar subnet |
+| `dig example.com` | DNS status, answer, resolver | apakah nama bisa diterjemahkan menjadi address |
+| `curl -v` | TCP connect, TLS, HTTP status | apakah aplikasi bisa diakses sampai Layer 7 |
+
+Cara membaca output dasar:
+
+| Output | Cara Membaca |
+|---|---|
+| `inet 192.168.1.10/24` | host punya IPv4 `192.168.1.10` dengan prefix `/24`; host menganggap `192.168.1.0/24` sebagai subnet lokal |
+| `inet6 fe80::.../64 scope link` | IPv6 link-local; hanya berlaku di link lokal dan tidak diroute antar subnet |
+| `state UP` dan `LOWER_UP` | interface aktif secara administratif dan link fisik/carrier terdeteksi |
+| `default via 192.168.1.1 dev eth0` | traffic ke destination tanpa route lebih spesifik dikirim ke gateway `192.168.1.1` lewat `eth0` |
+| `NOERROR` di `dig` | query DNS sukses secara protocol; cek answer section untuk melihat record yang dikembalikan |
+| `NXDOMAIN` di `dig` | nama tidak ada menurut DNS path yang dipakai resolver |
+| `SERVFAIL` di `dig` | resolver gagal menyelesaikan query; kandidatnya DNSSEC, authoritative server error, timeout, atau masalah recursion |
+| `* Connected to ...` di `curl -v` | TCP connect berhasil; jika setelah itu gagal, masalah sudah melewati reachability dasar |
+| `< HTTP/2 200` atau `< HTTP/1.1 301` | response aplikasi diterima; angka status code menjelaskan hasil request dari sisi HTTP |
 
 ### 1.1 OSI Model
 
@@ -153,6 +144,13 @@ Detail tiap layer:
 | 3 | Network | Packet | IP address | router, L3 switch, firewall | IPv4, IPv6, ICMP, IPsec | IP, subnet, gateway, route, TTL |
 | 2 | Data Link | Frame | MAC address, VLAN ID | switch, bridge, AP | Ethernet, 802.1Q, ARP, STP, Wi-Fi MAC | VLAN, MAC table, ARP, trunk, STP |
 | 1 | Physical | Bits | signal, pin, wavelength, frequency | cable, transceiver, repeater | copper, fiber, RF, SFP | link light, speed, duplex, signal, cable |
+
+- OSI adalah model belajar dan troubleshooting. Implementasi Internet modern biasanya lebih dekat ke model TCP/IP: link, internet, transport, dan application.
+- Layer 5 dan 6 jarang terlihat sebagai komponen terpisah di sistem modern. Session, encoding, serialization, compression, dan encryption sering ditangani oleh aplikasi, library, TLS stack, proxy, atau framework.
+- Perangkat network juga tidak selalu murni satu layer. Firewall bisa membaca Layer 3/4, tetapi next-generation firewall atau WAF bisa mengambil keputusan berdasarkan Layer 7.
+- Header Layer 2 berubah setiap hop karena frame hanya berlaku pada link lokal. Source/destination MAC address biasanya berubah saat melewati router.
+- Header Layer 3 relatif end-to-end, tetapi `TTL`/`Hop Limit` berkurang setiap router, dan NAT bisa mengubah source atau destination IP.
+- Header Layer 4 membawa port dan state koneksi. NAT/PAT, load balancer, proxy, atau firewall bisa mengubah atau membuat koneksi baru sehingga flow yang terlihat di satu titik belum tentu sama persis di titik lain.
 
 Penjelasan per layer:
 
@@ -467,7 +465,7 @@ Ethernet frame
 
 IP packet
   Source IP: 192.168.1.10
-  Destination IP: 93.184.216.34
+  Destination IP: 198.51.100.10
   Protocol: TCP
 
 TCP segment
@@ -570,7 +568,7 @@ Hal penting:
 
 Perangkat network punya fungsi berbeda. Dalam troubleshooting, penting tahu perangkat mana yang membuat keputusan forwarding, filtering, inspection, atau translation.
 
-| Perangkat/Fungsi | Fungsi Utama | Catatan |
+| Perangkat/Fungsi | Fungsi Utama | Keterangan |
 |---|---|---|
 | Router | menghubungkan network berbeda | bekerja dominan di Layer 3 |
 | Switch | menghubungkan host dalam LAN | bekerja dominan di Layer 2 |
@@ -593,7 +591,7 @@ Perangkat network punya fungsi berbeda. Dalam troubleshooting, penting tahu pera
 
 Application dan function penting:
 
-| Item | Arti | Catatan Operasional |
+| Item | Arti | Keterangan Operasional |
 |---|---|---|
 | CDN | cache/distribusi content dekat user | mengurangi latency dan beban origin |
 | VPN | tunnel terenkripsi antar user/site/network | remote access atau site-to-site |
@@ -734,7 +732,7 @@ Konsep penting:
 
 Cloud connectivity:
 
-| Opsi | Arti | Catatan |
+| Opsi | Arti | Keterangan |
 |---|---|---|
 | Internet gateway | akses public internet untuk subnet public | butuh public IP/route |
 | NAT gateway | outbound internet dari private subnet | inbound langsung tidak dibuka |
@@ -868,7 +866,7 @@ Protocol category:
 
 IP protocol types:
 
-| Protocol | Layer | Arti | Catatan |
+| Protocol | Layer | Arti | Keterangan |
 |---|---:|---|---|
 | ICMP | 3 | control/error message untuk IP | dipakai `ping`, unreachable, TTL exceeded |
 | TCP | 4 | reliable byte stream | handshake, stateful |
@@ -911,18 +909,18 @@ TCP flags:
 
 TCP harus membuat koneksi sebelum data aplikasi dikirim. Proses ini disebut three-way handshake.
 
-Contoh client `192.168.1.10` membuka HTTPS ke server `93.184.216.34:443`:
+Contoh client `192.168.1.10` membuka HTTPS ke server `198.51.100.10:443`:
 
 ```text
 1. Client -> Server: SYN
    Source IP: 192.168.1.10
    Source Port: 51544
-   Destination IP: 93.184.216.34
+   Destination IP: 198.51.100.10
    Destination Port: 443
    Flag: SYN
 
 2. Server -> Client: SYN, ACK
-   Source IP: 93.184.216.34
+   Source IP: 198.51.100.10
    Source Port: 443
    Destination IP: 192.168.1.10
    Destination Port: 51544
@@ -931,7 +929,7 @@ Contoh client `192.168.1.10` membuka HTTPS ke server `93.184.216.34:443`:
 3. Client -> Server: ACK
    Source IP: 192.168.1.10
    Source Port: 51544
-   Destination IP: 93.184.216.34
+   Destination IP: 198.51.100.10
    Destination Port: 443
    Flag: ACK
 ```
@@ -1043,7 +1041,7 @@ UDP tidak punya handshake:
 Socket:
 
 ```text
-192.168.1.10:51544 -> 93.184.216.34:443 TCP
+192.168.1.10:51544 -> 198.51.100.10:443 TCP
 ```
 
 Field socket:
@@ -1052,7 +1050,7 @@ Field socket:
 |---|---|---|
 | source IP | `192.168.1.10` | host asal |
 | source port | `51544` | ephemeral port client |
-| destination IP | `93.184.216.34` | host tujuan |
+| destination IP | `198.51.100.10` | host tujuan |
 | destination port | `443` | service tujuan |
 | protocol | `TCP` | transport protocol |
 
@@ -1086,7 +1084,7 @@ Media menentukan bagaimana data dikirim secara fisik: copper, fiber, atau wirele
 
 Copper cable:
 
-| Tipe | Catatan |
+| Tipe | Keterangan |
 |---|---|
 | Cat 5e | umum untuk 1 Gbps |
 | Cat 6 | 1 Gbps, bisa 10 Gbps jarak terbatas |
@@ -1111,7 +1109,7 @@ Copper cable:
 
 Fiber:
 
-| Tipe | Arti | Catatan |
+| Tipe | Arti | Keterangan |
 |---|---|---|
 | Single-mode | core kecil, jarak jauh | biasanya laser |
 | Multimode | core lebih besar, jarak lebih pendek | data center/campus |
@@ -1131,7 +1129,7 @@ Connector:
 
 Transceiver:
 
-| Tipe | Catatan |
+| Tipe | Keterangan |
 |---|---|
 | SFP | 1 Gbps |
 | SFP+ | 10 Gbps |
@@ -1162,7 +1160,7 @@ Ethernet copper pinout:
 
 Straight-through vs crossover:
 
-| Cable | Ujung A | Ujung B | Catatan |
+| Cable | Ujung A | Ujung B | Keterangan |
 |---|---|---|---|
 | Straight-through | T568A | T568A | umum |
 | Straight-through | T568B | T568B | paling umum |
@@ -1199,7 +1197,7 @@ Topology menjelaskan bentuk hubungan antar perangkat.
 
 Topology:
 
-| Topology | Arti | Catatan |
+| Topology | Arti | Keterangan |
 |---|---|---|
 | Star | semua node ke central switch | umum di LAN |
 | Mesh | banyak jalur antar node | redundancy tinggi |
@@ -1288,7 +1286,7 @@ Private IPv4:
 
 Classful IPv4 lama:
 
-| Class | Range Awal | Default Mask | Catatan |
+| Class | Range Awal | Default Mask | Keterangan |
 |---|---|---|---|
 | A | `1.0.0.0 - 126.255.255.255` | `/8` | unicast lama, `127/8` loopback |
 | B | `128.0.0.0 - 191.255.255.255` | `/16` | unicast lama |
@@ -1296,7 +1294,7 @@ Classful IPv4 lama:
 | D | `224.0.0.0 - 239.255.255.255` | n/a | multicast |
 | E | `240.0.0.0 - 255.255.255.255` | n/a | reserved/experimental |
 
-Catatan:
+Keterangan:
 
 - Desain modern memakai CIDR, bukan classful routing.
 - Class A/B/C masih sering muncul di materi dasar, legacy system, dan percakapan troubleshooting.
@@ -1433,7 +1431,7 @@ Jenis IPv6:
 | Multicast | `ff00::/8` | group communication |
 | Loopback | `::1/128` | localhost |
 
-Catatan:
+Keterangan:
 
 - IPv6 tidak memakai broadcast.
 - Neighbor Discovery menggantikan banyak fungsi ARP.
@@ -1446,7 +1444,7 @@ IP addressing harus bisa dihitung manual, dibaca dari output command, dan diveri
 
 IP version:
 
-| Version | Panjang | Format | Contoh | Catatan |
+| Version | Panjang | Format | Contoh | Keterangan |
 |---|---:|---|---|---|
 | IPv4 | 32 bit | decimal dotted quad | `192.168.10.25/24` | punya broadcast |
 | IPv6 | 128 bit | hexadecimal hextet | `2001:db8:abcd:10::25/64` | tidak punya broadcast |
@@ -1570,7 +1568,7 @@ total address = 2 ^ host bits
 usable host = total address - 2
 ```
 
-Catatan:
+Keterangan:
 
 - `-2` karena network address dan broadcast address tidak dipakai host biasa.
 - `/31` bisa dipakai untuk point-to-point modern, sehingga dua address bisa usable di link tersebut.
@@ -1680,7 +1678,7 @@ Wildcard matching:
 
 #### IPv4 Special Address Behavior
 
-| Address/Range | Arti | Catatan |
+| Address/Range | Arti | Keterangan |
 |---|---|---|
 | `0.0.0.0` | unspecified/default | bisa berarti semua interface atau default route |
 | `0.0.0.0/0` | default route | semua destination jika tidak ada route lebih spesifik |
@@ -1755,7 +1753,7 @@ First:  2001:db8:abcd:10::1
 Last:   2001:db8:abcd:10:ffff:ffff:ffff:ffff
 ```
 
-Catatan:
+Keterangan:
 
 - IPv6 tidak punya broadcast address.
 - Address `::` berarti unspecified, bukan host biasa.
@@ -1764,7 +1762,7 @@ Catatan:
 
 IPv6 prefix planning:
 
-| Allocation | Bisa Dibagi Menjadi | Catatan |
+| Allocation | Bisa Dibagi Menjadi | Keterangan |
 |---|---:|---|
 | `/48` | 65,536 subnet `/64` | umum untuk site besar/enterprise |
 | `/56` | 256 subnet `/64` | umum untuk site kecil/branch |
@@ -1894,7 +1892,7 @@ Hands-on checklist:
 
 ## 2.0 Network Implementation
 
-**Praktik setelah bab ini:** ubah konsep routing/switching menjadi bukti forwarding path.
+**Fokus teknis:** routing dan switching bisa dibaca sebagai forwarding path.
 
 ```bash
 # Melihat route yang dipilih kernel untuk destination tertentu.
@@ -1910,9 +1908,18 @@ sudo ip link add link eth0 name eth0.10 type vlan id 10
 ip -d link show eth0.10
 ```
 
-Catat: gateway, next-hop, interface keluar, MAC neighbor, VLAN ID, dan perbedaan antara routing Layer 3 dan tagging Layer 2.
+Aspek teknis: gateway, next-hop, interface keluar, MAC neighbor, VLAN ID, dan perbedaan antara routing Layer 3 dan tagging Layer 2.
 
-Bagian ini membahas routing, switching, wireless, dan instalasi fisik.
+Cakupan: routing, switching, wireless, dan instalasi fisik.
+
+Cara membaca contoh command:
+
+| Command | Yang diamati | Makna |
+|---|---|---|
+| `ip route get 8.8.8.8` | source IP, next-hop, egress interface | keputusan route lookup untuk destination tertentu |
+| `ip neigh show` | IP neighbor, MAC address, state | hasil ARP/Neighbor Discovery pada local link |
+| `ip link add ... type vlan` | VLAN ID dan parent interface | contoh subinterface 802.1Q di Linux, sementara sampai dikonfigurasi permanen |
+| `ip -d link show eth0.10` | detail VLAN subinterface | validasi bahwa tag VLAN dan interface dibuat sesuai tujuan |
 
 ### 2.1 Routing Technologies
 
@@ -1927,7 +1934,7 @@ Static vs dynamic:
 
 Protocol routing:
 
-| Protocol | Type | Catatan |
+| Protocol | Type | Keterangan |
 |---|---|---|
 | OSPF | link-state IGP | umum di enterprise |
 | EIGRP | advanced distance-vector IGP | Cisco-heavy environment |
@@ -1986,7 +1993,7 @@ Administrative distance umum:
 | External BGP | 20 |
 | Internal BGP | 200 |
 
-Catatan:
+Keterangan:
 
 - Administrative distance dipakai untuk memilih sumber route jika prefix sama.
 - Metric dipakai di dalam protocol routing yang sama.
@@ -2263,7 +2270,7 @@ Field tag penting:
 
 Detail field:
 
-| Field | Ukuran | Catatan |
+| Field | Ukuran | Keterangan |
 |---|---:|---|
 | TPID | 16 bit | biasanya `0x8100`, menandakan frame 802.1Q |
 | PCP | 3 bit | priority code point untuk QoS Layer 2 |
@@ -2272,7 +2279,7 @@ Detail field:
 
 VLAN ID umum:
 
-| VLAN ID | Catatan |
+| VLAN ID | Keterangan |
 |---:|---|
 | 0 | priority tag, bukan VLAN biasa |
 | 1 | default VLAN pada banyak switch, sebaiknya tidak dipakai untuk user |
@@ -2355,7 +2362,7 @@ VLAN security:
 
 Troubleshooting VLAN:
 
-| Pertanyaan | Bukti yang Dicari |
+| Pertanyaan | Yang Dicari |
 |---|---|
 | Port endpoint VLAN berapa | switchport mode/access VLAN |
 | Trunk membawa VLAN yang benar | allowed VLAN list |
@@ -2409,8 +2416,6 @@ sudo ip link set eth0.10 up
 # Capture frame VLAN 10 jika tag terlihat di host.
 sudo tcpdump -i eth0 -e vlan 10
 ```
-
-Catatan capture: VLAN tag kadang tidak terlihat di host karena NIC VLAN offload. Jika capture tidak menampilkan tag, cek offload atau ambil capture dari switch SPAN/TAP.
 
 Link aggregation:
 
@@ -2512,7 +2517,7 @@ Frequency:
 
 802.11 standards:
 
-| Standard | Band Umum | Catatan |
+| Standard | Band Umum | Keterangan |
 |---|---|---|
 | 802.11a | 5 GHz | lama |
 | 802.11b/g | 2.4 GHz | lama, rawan interference |
@@ -2532,7 +2537,7 @@ Channel:
 
 2.4 GHz non-overlapping:
 
-| Channel | Catatan |
+| Channel | Keterangan |
 |---:|---|
 | 1 | umum dipakai |
 | 6 | umum dipakai |
@@ -2540,7 +2545,7 @@ Channel:
 
 Channel width:
 
-| Width | Catatan |
+| Width | Keterangan |
 |---|---|
 | 20 MHz | stabil, cocok area padat |
 | 40 MHz | throughput lebih tinggi, lebih mudah overlap |
@@ -2726,7 +2731,7 @@ Power:
 
 PoE:
 
-| Standard | Power Class Umum | Catatan |
+| Standard | Power Class Umum | Keterangan |
 |---|---|---|
 | 802.3af | PoE | IP phone/AP kecil |
 | 802.3at | PoE+ | AP lebih besar, camera |
@@ -2749,7 +2754,7 @@ Environment:
 
 ## 3.0 Network Operations
 
-**Praktik setelah bab ini:** kumpulkan bukti operasional sebelum membuat kesimpulan.
+**Fokus teknis:** operasi network dibaca dari data, baseline, dan perubahan.
 
 ```bash
 # Menguji reachability dan latency dasar.
@@ -2762,9 +2767,17 @@ traceroute 8.8.8.8
 sudo tcpdump -i eth0 -nn port 53
 ```
 
-Catat: waktu tes, scope dampak, hop yang berubah, packet loss, latency, DNS resolver, dan perubahan terakhir yang mungkin relevan.
+Aspek teknis: waktu tes, scope dampak, hop yang berubah, packet loss, latency, DNS resolver, dan perubahan terakhir yang mungkin relevan.
 
-Bagian ini membahas dokumentasi, monitoring, DR, network services, dan akses management.
+Cakupan: dokumentasi, monitoring, DR, network services, dan akses management.
+
+Cara membaca contoh command:
+
+| Command | Yang diamati | Makna |
+|---|---|---|
+| `ping -c 4 8.8.8.8` | packet loss, latency, reply | reachability dasar dan indikasi delay/loss |
+| `traceroute 8.8.8.8` | hop path, timeout, perubahan jalur | gambaran kasar jalur Layer 3 menuju tujuan |
+| `tcpdump -i eth0 -nn port 53` | query DNS dan response | data packet-level bahwa DNS request keluar dan jawaban kembali |
 
 ### 3.1 Organizational Processes and Procedures
 
@@ -2808,7 +2821,7 @@ Asset inventory:
 
 SLA dan lifecycle:
 
-| Item | Arti | Catatan |
+| Item | Arti | Keterangan |
 |---|---|---|
 | SLA | service-level agreement | target availability, response time, support |
 | EOL | end-of-life | vendor tidak lagi menjual/aktif mengembangkan produk |
@@ -2849,7 +2862,7 @@ Field change request yang bagus:
 | Risk | risiko teknis dan bisnis |
 | Impact | siapa yang terdampak dan berapa lama |
 | Implementation steps | langkah perubahan yang akan dilakukan |
-| Validation steps | cara membuktikan perubahan berhasil |
+| Validation steps | cara memverifikasi perubahan berhasil |
 | Rollback plan | cara kembali ke kondisi sebelumnya |
 | Maintenance window | waktu perubahan yang disetujui |
 | Approver | pihak yang menyetujui |
@@ -2872,7 +2885,7 @@ Baseline/golden config:
 
 Backup konfigurasi:
 
-| Jenis | Arti | Catatan |
+| Jenis | Arti | Keterangan |
 |---|---|---|
 | Manual backup | admin export/copy config sendiri | cocok sebelum change |
 | Scheduled backup | backup otomatis berkala | cocok untuk audit dan recovery |
@@ -2886,7 +2899,7 @@ Field backup config:
 | Device | `FW-HQ-01` | perangkat asal config |
 | Timestamp | `2026-05-23 22:00` | waktu backup |
 | Config version | `pre-change-CHG-1021` | label versi |
-| Hash | `sha256:...` | bukti integritas file |
+| Hash | `sha256:...` | indikator integritas file |
 | Owner | `Network Team` | penanggung jawab |
 | Restore tested | `yes/no` | apakah pernah diuji restore |
 
@@ -2928,7 +2941,7 @@ Metode:
 
 SNMP:
 
-| Versi | Catatan |
+| Versi | Keterangan |
 |---|---|
 | v2c | community string, tidak aman modern |
 | v3 | authentication dan encryption |
@@ -3026,7 +3039,7 @@ HA:
 Testing:
 
 - Tabletop exercise membahas skenario tanpa benar-benar failover.
-- Validation test membuktikan proses recovery benar-benar jalan.
+- Validation test menunjukkan proses recovery benar-benar jalan.
 - DR plan yang tidak pernah diuji belum bisa dipercaya.
 
 Backup strategy:
@@ -3242,7 +3255,7 @@ Contoh:
 192.0.2.10 app.example.com
 ```
 
-Catatan:
+Keterangan:
 
 - Hosts file biasanya dicek sebelum DNS resolver.
 - Entry lama di hosts file bisa membuat troubleshooting DNS membingungkan.
@@ -3311,7 +3324,7 @@ Access management menentukan cara admin mengelola perangkat.
 
 Metode:
 
-| Metode | Fungsi | Catatan |
+| Metode | Fungsi | Keterangan |
 |---|---|---|
 | SSH | CLI terenkripsi | umum untuk router/switch/server |
 | GUI | web management | mudah, perlu HTTPS/MFA |
@@ -3415,7 +3428,7 @@ TACACS+ vs RADIUS:
 
 ## 4.0 Network Security
 
-**Praktik setelah bab ini:** lihat security control sebagai traffic yang diizinkan, ditolak, atau dicatat.
+**Fokus teknis:** security control terlihat dari traffic yang diizinkan, ditolak, atau dicatat.
 
 ```bash
 # Melihat listening socket lokal yang menjadi attack surface.
@@ -3428,9 +3441,17 @@ sudo nft list ruleset
 nmap -sV 127.0.0.1
 ```
 
-Catat: service yang expose port, rule yang mengizinkan traffic, rule yang menolak traffic, dan apakah hasil scan sesuai ekspektasi hardening.
+Aspek teknis: service yang expose port, rule yang mengizinkan traffic, rule yang menolak traffic, dan apakah hasil scan sesuai ekspektasi hardening.
 
-Bagian ini membahas konsep security, attack, dan defense.
+Cakupan: konsep security, attack, dan defense.
+
+Cara membaca contoh command:
+
+| Command | Yang diamati | Makna |
+|---|---|---|
+| `ss -tulpn` | listening address, port, process | service lokal yang membuka attack surface |
+| `nft list ruleset` | chain, rule, action | policy firewall yang mengizinkan, menolak, atau mencatat traffic |
+| `nmap -sV 127.0.0.1` | port terbuka dan service version | validasi exposure dari sisi scan lokal host sendiri |
 
 ### 4.1 Basic Network Security Concepts
 
@@ -3463,7 +3484,7 @@ IAM:
 
 | Konsep | Arti |
 |---|---|
-| Authentication | membuktikan identitas |
+| Authentication | menunjukkan identitas |
 | Authorization | menentukan hak akses |
 | MFA | faktor tambahan selain password |
 | SSO | satu login untuk banyak aplikasi |
@@ -3490,7 +3511,7 @@ Compliance dan data locality:
 | PCI DSS | standar keamanan untuk card/payment data |
 | GDPR | regulasi perlindungan data pribadi Uni Eropa |
 
-Catatan:
+Keterangan:
 
 - Compliance bukan pengganti security engineering.
 - Network design bisa dipengaruhi lokasi data, logging, encryption, segmentation, dan akses admin.
@@ -3534,9 +3555,9 @@ AAA:
 
 | Komponen | Pertanyaan yang Dijawab |
 |---|---|
-| Authentication | siapa kamu |
-| Authorization | kamu boleh melakukan apa |
-| Accounting | apa yang kamu lakukan dan kapan |
+| Authentication | identitas subjek |
+| Authorization | hak akses subjek |
+| Accounting | aktivitas subjek dan waktu kejadian |
 
 Authentication factor:
 
@@ -3581,7 +3602,7 @@ Field certificate:
 | Issuer | CA yang menandatangani |
 | Validity | masa berlaku |
 | Public key | key publik service |
-| Signature | bukti certificate ditandatangani CA |
+| Signature | indikator certificate ditandatangani CA |
 
 Certificate problem:
 
@@ -3890,7 +3911,7 @@ DHCP snooping trust:
 
 Wireless security:
 
-| Mode | Catatan |
+| Mode | Keterangan |
 |---|---|
 | Open | tidak ada enkripsi, hindari untuk internal |
 | WPA2-Personal | shared password, cocok rumah/small office |
@@ -3922,25 +3943,34 @@ Security monitoring:
 
 ## 5.0 Network Troubleshooting
 
-**Praktik setelah bab ini:** pecahkan masalah dengan urutan bukti, bukan tebakan.
+**Fokus teknis:** troubleshooting yang baik dibangun dari urutan data, bukan tebakan.
 
 ```bash
 # Cek DNS resolution.
 dig example.com
 
 # Cek route yang dipilih untuk destination.
-ip route get 93.184.216.34
+ip route get 198.51.100.10
 
 # Cek koneksi TCP ke port HTTPS.
 nc -vz example.com 443
 
 # Capture traffic ke host tujuan.
-sudo tcpdump -i eth0 -nn host 93.184.216.34
+sudo tcpdump -i eth0 -nn host 198.51.100.10
 ```
 
-Catat: layer pertama yang gagal, output yang membuktikan gagal, dan command pembanding dari layer lain.
+Aspek teknis: layer pertama yang gagal, output yang menunjukkan gagal, dan command pembanding dari layer lain.
 
-Bagian ini membahas methodology, physical issues, services, performance, dan tools.
+Cakupan: methodology, physical issues, services, performance, dan tools.
+
+Cara membaca contoh command:
+
+| Command | Yang diamati | Makna |
+|---|---|---|
+| `dig example.com` | status DNS dan answer | membedakan masalah DNS dari masalah koneksi |
+| `ip route get 198.51.100.10` | route dan interface keluar | memastikan host tahu jalur ke destination IP |
+| `nc -vz example.com 443` | success, refused, timeout | membedakan port terbuka, tertutup, atau packet hilang |
+| `tcpdump ... host 198.51.100.10` | SYN, SYN-ACK, RST, retransmission | data packet-level di titik capture |
 
 ### 5.1 Troubleshooting Methodology
 
@@ -4004,9 +4034,9 @@ Pendekatan OSI:
 | Bottom-to-top | mulai dari fisik ke aplikasi |
 | Divide and conquer | mulai dari layer tengah untuk mempersempit |
 
-Evidence per layer:
+Data teknis per layer:
 
-| Layer | Evidence yang Dicari | Tool/Command |
+| Layer | Data Teknis yang Dicari | Tool/Command |
 |---:|---|---|
 | 1 | link up/down, speed, optic power | interface status, cable tester |
 | 2 | VLAN, MAC table, ARP, STP | switch show commands, ARP table |
@@ -4136,7 +4166,7 @@ Route selection:
 
 DHCP issue matrix:
 
-| Gejala | Dugaan | Bukti |
+| Gejala | Dugaan | Yang perlu dicek |
 |---|---|---|
 | APIPA | DHCP server/relay tidak reachable | tidak ada Offer |
 | IP dari subnet salah | VLAN salah atau rogue DHCP | gateway/DNS tidak sesuai IPAM |
@@ -4146,7 +4176,7 @@ DHCP issue matrix:
 
 DNS issue matrix:
 
-| Gejala | Dugaan | Bukti |
+| Gejala | Dugaan | Yang perlu dicek |
 |---|---|---|
 | `NXDOMAIN` | record tidak ada atau nama salah | authoritative jawab tidak ada |
 | Timeout | resolver tidak reachable/firewall | query tidak mendapat response |
@@ -4378,7 +4408,7 @@ Field:
 | latency per probe | waktu reply tiap probe |
 | `*` | tidak ada reply, bisa filter ICMP/TTL atau drop |
 
-Catatan:
+Keterangan:
 
 - Hop `*` tidak selalu berarti traffic aplikasi gagal.
 - Yang penting adalah apakah tujuan akhir tercapai.
@@ -4434,9 +4464,9 @@ Status DNS:
 `tcpdump` sample:
 
 ```text
-10:10:01.123456 IP 192.168.1.10.51544 > 93.184.216.34.443: Flags [S], seq 1000
-10:10:01.150000 IP 93.184.216.34.443 > 192.168.1.10.51544: Flags [S.], ack 1001
-10:10:01.151000 IP 192.168.1.10.51544 > 93.184.216.34.443: Flags [.], ack 2001
+10:10:01.123456 IP 192.168.1.10.51544 > 198.51.100.10.443: Flags [S], seq 1000
+10:10:01.150000 IP 198.51.100.10.443 > 192.168.1.10.51544: Flags [S.], ack 1001
+10:10:01.151000 IP 192.168.1.10.51544 > 198.51.100.10.443: Flags [.], ack 2001
 ```
 
 Field:
@@ -4496,7 +4526,7 @@ Interpretasi cepat:
 
 ## 6.0 Senior Deep Dive
 
-**Praktik setelah bab ini:** baca state kernel, NIC, TCP, DNS, dan packet capture secara bersamaan.
+**Fokus teknis:** state kernel, NIC, TCP, DNS, dan packet capture saling melengkapi.
 
 ```bash
 # Melihat detail TCP socket, timer, dan congestion info.
@@ -4509,9 +4539,17 @@ ethtool -k eth0
 sudo tcpdump -i eth0 -nn -w network-deep-dive.pcap
 ```
 
-Catat: retransmission, RTT, congestion state, offload yang bisa memengaruhi capture, dan bukti packet-level yang mendukung kesimpulan.
+Aspek teknis: retransmission, RTT, congestion state, offload yang bisa memengaruhi capture, dan data packet-level yang mendukung kesimpulan.
 
-Bagian ini untuk membaca network seperti operator senior: bukan hanya "bisa ping atau tidak", tetapi packet lewat jalur mana, state apa yang dibuat, cache mana yang dipakai, counter mana yang naik, dan bukti apa yang cukup kuat untuk menyatakan root cause.
+Tujuan teknis: membaca network seperti operator senior: bukan hanya "bisa ping atau tidak", tetapi packet lewat jalur mana, state apa yang dibuat, cache mana yang dipakai, counter mana yang naik, dan data apa yang cukup kuat untuk menyatakan root cause.
+
+Cara membaca contoh command:
+
+| Command | Yang diamati | Makna |
+|---|---|---|
+| `ss -ti` | RTT, retransmission, congestion, timer | kondisi TCP socket dari perspektif kernel |
+| `ethtool -k eth0` | offload feature | fitur NIC yang bisa memengaruhi performa dan hasil capture lokal |
+| `tcpdump -w ...pcap` | packet mentah untuk analisis | data packet-level yang bisa dibuka ulang di Wireshark/tcpdump |
 
 ### 6.1 Packet Path dan Kernel Networking
 
@@ -4658,7 +4696,7 @@ TCP adalah byte stream yang stateful. Saat troubleshooting senior, pertanyaannya
 
 TCP state umum:
 
-| State | Arti | Catatan Troubleshooting |
+| State | Arti | Keterangan Troubleshooting |
 |---|---|---|
 | LISTEN | service menunggu koneksi | cek bind address dan firewall |
 | SYN-SENT | client sudah kirim SYN | jika lama, SYN-ACK tidak kembali |
@@ -4741,7 +4779,7 @@ sysctl net.core.somaxconn
 sysctl net.ipv4.tcp_max_syn_backlog
 ```
 
-Tuning yang harus dipahami, bukan asal dinaikkan:
+Tuning yang aman berbasis pemahaman, bukan sekadar menaikkan angka:
 
 | Parameter | Fungsi | Risiko Jika Salah |
 |---|---|---|
@@ -4849,7 +4887,7 @@ DNSSEC ringkas:
 | DNSKEY | public key zone |
 | DS | hash key child zone di parent zone |
 | RRSIG | signature record set |
-| NSEC/NSEC3 | bukti record tidak ada |
+| NSEC/NSEC3 | indikator bahwa record tidak ada |
 
 EDNS dan ukuran response:
 
@@ -4964,9 +5002,9 @@ ECMP dan hashing:
 
 Observability network menggabungkan packet, flow, counters, logs, metrics, dan change timeline. Satu sumber data jarang cukup.
 
-Sumber bukti:
+sumber data:
 
-| Bukti | Menjawab |
+| Data | Menjawab |
 |---|---|
 | Packet capture | packet benar-benar terlihat atau tidak |
 | Flow data | siapa bicara dengan siapa dan berapa banyak |
@@ -4979,7 +5017,7 @@ Sumber bukti:
 
 Capture point:
 
-| Lokasi Capture | Bisa Membuktikan |
+| Lokasi Capture | Bisa menunjukkan |
 |---|---|
 | Client | request dibuat dan reply diterima/tidak |
 | Default gateway | traffic keluar VLAN |
@@ -5033,7 +5071,7 @@ RCA format:
 | Contributing factor | faktor pendukung |
 | Resolution | tindakan pemulihan |
 | Prevention | kontrol agar tidak terulang |
-| Evidence | capture, log, counter, change ID |
+| Data teknis | capture, log, counter, change ID |
 
 ### 6.6 Performance Engineering dan Capacity Planning
 

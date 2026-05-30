@@ -1,13 +1,15 @@
 # Linux
 
-Catatan Linux pribadi untuk belajar serius, praktik command, dan membangun fondasi administrasi Linux.
+Sumber resmi utama:
 
-Fokus utama catatan ini:
-
-- memahami konsep inti Linux
-- mengingat command yang sering dipakai
-- punya referensi cepat saat troubleshooting
-- membangun kebiasaan administrasi sistem yang rapi dan aman
+- Linux kernel documentation: https://docs.kernel.org/
+- Linux man-pages project: https://www.kernel.org/doc/man-pages/
+- Debian documentation: https://www.debian.org/doc/
+- Ubuntu Server documentation: https://documentation.ubuntu.com/server/
+- Red Hat Enterprise Linux documentation: https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/
+- systemd manual pages: https://www.freedesktop.org/software/systemd/man/latest/
+- Docker Docs: https://docs.docker.com/
+- Ansible documentation: https://docs.ansible.com/
 
 Area utama:
 
@@ -19,11 +21,8 @@ Area utama:
 | Automation, Orchestration, and Scripting | Bash, Python, Ansible, Git, CI/CD, AI-assisted workflow |
 | Troubleshooting | monitoring, log, hardware, storage, OS, network, security, performance |
 
-Gunakan halaman ini untuk memahami konsep, menjalankan command, mencatat observasi, dan mengulang praktik dari ingatan.
-
 ## Daftar Isi
 
-- [0. Cara Pakai Catatan Ini](#0-cara-pakai-catatan-ini)
 - [1.0 System Management](#10-system-management)
   - [1.1 Konsep Dasar Linux](#11-konsep-dasar-linux)
   - [1.2 Device Management](#12-device-management)
@@ -60,60 +59,9 @@ Gunakan halaman ini untuk memahami konsep, menjalankan command, mencatat observa
 
 ---
 
-## 0. Cara Pakai Catatan Ini
-
-Saat belajar atau bekerja dengan Linux, jangan hanya menghafal command. Pastikan bisa menjelaskan:
-
-- apa masalahnya
-- command apa yang dipakai
-- output apa yang dicari
-- file konfigurasi apa yang relevan
-- perubahan mana yang sementara dan mana yang permanen
-- cara rollback atau recovery
-
-Checklist praktik:
-
-- Jalankan command di VM Linux.
-- Coba di distro Debian/Ubuntu dan RHEL/Fedora bila memungkinkan.
-- Biasakan membaca `man`, `--help`, log, dan file konfigurasi.
-- Catat error yang muncul, bukan hanya command yang berhasil.
-
-### Kedalaman Belajar yang Diharapkan
-
-Untuk setiap topik, targetkan tiga level pemahaman:
-
-1. Konsep: tahu fungsi fitur, komponen yang terlibat, dan risiko perubahan.
-2. Operasional: bisa menjalankan command, membaca output, dan mengubah konfigurasi.
-3. Troubleshooting: bisa mengisolasi penyebab masalah dari log, status service, permission, network path, atau state storage.
-
-Masalah Linux sering berbentuk skenario, bukan satu command tunggal. Contohnya, service gagal start bisa menyentuh `systemctl`, `journalctl`, permission file, SELinux context, port conflict, package dependency, dan firewall sekaligus.
-
-### Cara Membaca Blok Command
-
-Setiap command di catatan ini diberi komentar singkat tepat di atasnya. Komentar menjelaskan tujuan command, sedangkan command menunjukkan bentuk praktisnya.
-
-Aturan membaca:
-
-- command yang diawali `sudo` mengubah sistem atau membutuhkan privilege tinggi
-- command inspeksi seperti `lsblk`, `ip addr`, dan `journalctl` dipakai sebelum melakukan perubahan
-- command permanen biasanya menyentuh file konfigurasi, package database, firewall permanent rule, systemd enable, atau `/etc/fstab`
-- command destructive seperti remove, delete, format, dan overwrite harus dicoba di VM lab lebih dulu
-
-### Lab Minimum
-
-Pola belajar di file ini:
-
-- baca konsep singkat, lalu langsung jalankan command yang ada di section tersebut
-- sebelum melihat output atau membaca penjelasan lanjutan, prediksi dulu apa yang seharusnya terjadi
-- setelah command selesai, tulis observasi: output penting, gejala, layer/komponen yang terlibat, dan dugaan penyebab
-- ulangi praktik yang sama di hari berikutnya tanpa melihat catatan agar ingatan dibangun lewat recall
-- jalankan command hanya di sistem milik sendiri, lab pribadi, atau environment yang memang kamu diberi izin
-
----
-
 ## 1.0 System Management
 
-**Praktik setelah bab ini:** kenali sistem dari kernel, storage, filesystem, process, dan service.
+**Fokus teknis:** kenali sistem dari kernel, storage, filesystem, process, dan service.
 
 ```bash
 # Melihat kernel dan arsitektur sistem.
@@ -129,77 +77,124 @@ findmnt
 ps aux --sort=-%mem | head
 ```
 
-Catat: kernel version, disk layout, filesystem type, mount option, process penting, dan service yang menjadi dependency sistem.
+Aspek teknis: kernel version, disk layout, filesystem type, mount option, process penting, dan service yang menjadi dependency sistem.
 
-Bagian ini merangkum konsep Linux dasar, boot, hardware, storage, network, shell, backup, dan virtualization.
+Cakupan: konsep Linux dasar, boot, hardware, storage, network, shell, backup, dan virtualization.
 
 ### 1.1 Konsep Dasar Linux
 
 #### Boot Process
 
-Urutan umum boot:
+Konsep:
 
-1. Firmware: `BIOS` atau `UEFI`
-2. Bootloader: biasanya `GRUB`
-3. Kernel Linux dimuat ke memory
-4. `initrd` atau `initramfs` menyiapkan environment awal
-5. Init system berjalan, umumnya `systemd`
-6. Service dan target default dijalankan
+Boot process adalah rantai transisi dari firmware sampai sistem siap menjalankan service. Setiap tahap hanya bisa berjalan jika tahap sebelumnya berhasil menemukan file, driver, konfigurasi, dan device yang dibutuhkan.
 
-Penjelasan:
+Kenapa penting secara teknis:
 
-- Firmware adalah komponen pertama yang berjalan setelah mesin dinyalakan. Di sistem lama biasanya `BIOS`, sedangkan sistem modern umumnya memakai `UEFI`.
-- Bootloader bertugas menemukan kernel, membaca konfigurasi boot, dan meneruskan parameter ke kernel.
-- Kernel mulai mengambil alih hardware, memory, process scheduling, storage driver, network driver, dan filesystem dasar.
-- `initramfs` penting ketika root filesystem membutuhkan driver khusus, LVM, RAID, atau encryption sebelum bisa di-mount.
-- Setelah root filesystem siap, `systemd` menjalankan unit-unit sesuai target default.
-- Jika boot gagal, biasanya titik masalah berada di GRUB, kernel parameter, initramfs, `/etc/fstab`, driver storage, atau service yang blocking saat startup.
+- Boot failure sering terjadi sebelum shell normal tersedia, sehingga admin harus tahu titik berhentinya ada di firmware, bootloader, kernel, initramfs, mount root filesystem, atau `systemd`.
+- Perubahan kecil seperti kernel parameter, `/etc/fstab`, driver storage, LUKS, LVM, RAID, atau unit systemd bisa membuat sistem masuk rescue/emergency mode.
+- Recovery yang aman bergantung pada pemahaman apakah masalah ada di konfigurasi boot, image initramfs, filesystem, atau service startup.
+
+Cara kerja internal:
+
+```text
+Power on
+-> BIOS/UEFI firmware
+-> boot device selection
+-> bootloader, biasanya GRUB
+-> kernel + kernel command line + initramfs
+-> kernel init dan driver awal
+-> initramfs mount root filesystem sementara
+-> switch_root ke root filesystem asli
+-> PID 1, biasanya systemd
+-> default target
+-> service, mount, socket, timer, dan login prompt
+```
 
 Komponen penting:
 
-- `GRUB`: bootloader, memilih kernel dan parameter boot
-- kernel parameters: opsi seperti `ro`, `quiet`, `single`, `systemd.unit=rescue.target`
-- `initrd`/`initramfs`: temporary root filesystem saat boot awal
-- `PXE`: boot lewat network, sering dipakai provisioning server
+| Komponen | Fungsi |
+|---|---|
+| Firmware | inisialisasi hardware awal dan memilih boot device |
+| UEFI System Partition | menyimpan bootloader EFI pada sistem UEFI |
+| GRUB | memilih kernel, initramfs, dan kernel parameter |
+| Kernel command line | mengatur opsi boot seperti root device, mode rescue, quiet/debug |
+| Kernel | mengambil alih CPU, memory, scheduler, driver, dan syscall interface |
+| initramfs | environment awal untuk menemukan dan mount root filesystem |
+| `/etc/fstab` | konfigurasi mount permanen yang diproses saat boot |
+| `systemd` | process PID 1 yang mengelola unit dan target |
+
+Normal behavior:
+
+- Firmware menemukan bootloader.
+- GRUB menampilkan menu atau langsung memilih entry default.
+- Kernel dan initramfs dimuat.
+- Root filesystem ditemukan dan di-mount.
+- `systemd` mencapai default target seperti `multi-user.target` atau `graphical.target`.
+- Login prompt, SSH, atau display manager tersedia.
+
+Failure behavior:
+
+| Gejala | Titik Masalah Umum |
+|---|---|
+| Tidak ada boot device | firmware, disk, controller, boot order |
+| GRUB prompt/rescue | konfigurasi GRUB, `/boot`, filesystem boot, UUID berubah |
+| Kernel panic awal | kernel, initramfs, driver storage, root device salah |
+| Emergency mode | `/etc/fstab`, filesystem error, mount dependency gagal |
+| Boot sangat lambat | service timeout, network wait, disk issue, dependency systemd |
+| Service gagal setelah boot | unit file, permission, environment, port conflict, dependency |
 
 Command boot dan systemd:
 
 ```bash
-# Menampilkan informasi kernel dan arsitektur sistem.
+# Melihat kernel, build, dan arsitektur yang sedang berjalan.
 uname -a
 
-# Membaca isi file langsung ke terminal.
+# Membaca kernel command line yang dipakai pada boot saat ini.
 cat /proc/cmdline
 
-# Mengelola atau memeriksa unit dan service systemd.
+# Melihat target default yang akan dicapai systemd saat boot normal.
 systemctl get-default
 
-# Mengelola atau memeriksa unit dan service systemd.
+# Mengubah target default boot berikutnya ke mode server non-GUI.
 systemctl set-default multi-user.target
 
-# Mengelola atau memeriksa unit dan service systemd.
+# Berpindah runtime ke rescue target tanpa reboot.
 systemctl isolate rescue.target
 
-# Mengelola atau memeriksa unit dan service systemd.
+# Melihat unit systemd yang gagal pada boot/session saat ini.
 systemctl list-units --failed
 
-# Menganalisis performa dan urutan boot systemd.
+# Melihat ringkasan waktu boot firmware, loader, kernel, initrd, dan userspace.
 systemd-analyze
 
-# Menganalisis performa dan urutan boot systemd.
+# Mengurutkan unit berdasarkan durasi startup.
 systemd-analyze blame
 
-# Membaca log dari systemd journal.
+# Membaca journal untuk boot saat ini.
 journalctl -b
 
-# Membaca log dari systemd journal.
+# Membaca log unit SSH/sshd, nama unit bisa berbeda antar distro.
 journalctl -u sshd
 ```
 
-File penting:
+Cara membaca output:
+
+| Output | Makna |
+|---|---|
+| `systemctl get-default` -> `multi-user.target` | sistem default ke mode multi-user tanpa GUI |
+| `systemctl get-default` -> `graphical.target` | sistem default ke mode GUI |
+| `systemctl list-units --failed` kosong | tidak ada unit failed yang tercatat oleh systemd saat ini |
+| `/proc/cmdline` berisi `systemd.unit=rescue.target` | boot diarahkan ke rescue target |
+| `/proc/cmdline` berisi `single` atau `emergency` | sistem diminta masuk mode maintenance |
+| `systemd-analyze blame` tinggi pada `NetworkManager-wait-online` | boot mungkin menunggu network online |
+| `journalctl -b` menunjukkan mount timeout | cek `/etc/fstab`, UUID, device, dan filesystem |
+
+File dan lokasi penting:
 
 ```text
 /boot
+/boot/efi
 /boot/grub
 /etc/default/grub
 /etc/fstab
@@ -207,9 +202,10 @@ File penting:
 /usr/lib/systemd/system
 ```
 
-Cara membaca file/lokasi ini:
+Cara membaca file/lokasi:
 
 - `/boot` harus cukup ruang karena berisi kernel dan image initramfs. Jika penuh, update kernel bisa gagal.
+- `/boot/efi` biasanya berisi EFI bootloader pada sistem UEFI. Jangan menghapus file di sini tanpa memahami boot entry.
 - `/etc/default/grub` biasanya dipakai untuk mengubah default kernel parameter, timeout, atau opsi menu GRUB.
 - `/etc/fstab` sangat sensitif saat boot. Entry yang salah bisa membuat sistem masuk emergency mode.
 - `/etc/systemd/system` berisi unit lokal atau override yang biasanya lebih prioritas dari unit bawaan paket.
@@ -225,11 +221,40 @@ sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 sudo update-grub
 ```
 
-Catatan:
+Implikasi security:
+
+- Bootloader yang tidak dilindungi bisa dipakai untuk mengubah kernel parameter dan masuk single-user/rescue mode.
+- Full disk encryption melindungi data saat disk dicuri, tetapi membutuhkan initramfs yang mendukung unlock root filesystem.
+- Secure Boot membantu memastikan bootloader/kernel yang dijalankan dipercaya oleh firmware, tetapi behavior detail bergantung distro, shim, signed kernel, dan policy organisasi.
+- Akses fisik ke server tetap sangat sensitif. Boot dari live media bisa melewati banyak kontrol OS jika firmware/bootloader tidak dikunci dan disk tidak terenkripsi.
+
+Lab aman:
+
+1. Pakai VM snapshot.
+2. Lihat `/proc/cmdline`, `systemctl get-default`, dan `journalctl -b`.
+3. Ubah target default ke `multi-user.target`, reboot, lalu kembalikan jika perlu.
+4. Tambahkan kernel parameter sementara dari menu GRUB, bukan permanen.
+5. Simulasikan error `/etc/fstab` hanya di VM, lalu recovery dari emergency mode.
+
+Troubleshooting path:
+
+1. Tentukan titik berhenti: firmware, GRUB, kernel, initramfs, mount root, atau systemd.
+2. Jika masih masuk GRUB, cek entry kernel dan root device.
+3. Jika kernel panic atau root tidak ditemukan, cek kernel command line, initramfs, UUID, LVM/RAID/LUKS.
+4. Jika masuk emergency mode, cek `journalctl -xb`, `/etc/fstab`, `lsblk -f`, dan `blkid`.
+5. Jika boot selesai tapi service gagal, cek `systemctl --failed` dan `journalctl -u <unit>`.
+6. Setelah recovery, pastikan perubahan permanen hanya dilakukan setelah root cause jelas.
+
+Sumber resmi:
+
+- GNU GRUB manual: https://www.gnu.org/software/grub/manual/grub/grub.html
+- Linux kernel command-line parameters: https://www.kernel.org/doc/html/latest/admin-guide/kernel-parameters.html
+- systemd bootup manual: https://www.freedesktop.org/software/systemd/man/latest/bootup.html
+- `fstab(5)` Linux manual page: https://man7.org/linux/man-pages/man5/fstab.5.html
 
 - `update-grub` umum di Debian/Ubuntu.
 - `grub2-mkconfig` umum di RHEL/Fedora.
-- Jangan ubah parameter boot permanen tanpa tahu cara rollback.
+- Perintah rebuild initramfs berbeda antar distro, misalnya `update-initramfs`, `dracut`, atau `mkinitcpio`.
 
 #### Filesystem Hierarchy Standard
 
@@ -664,7 +689,7 @@ sudo parted /dev/sdb
 sudo growpart /dev/sda 1
 ```
 
-Catatan:
+Keterangan:
 
 - `fdisk`: umum untuk MBR/GPT modern
 - `gdisk`: fokus GPT
@@ -711,7 +736,7 @@ sudo xfs_growfs /mountpoint
 sudo xfs_repair /dev/sdb1
 ```
 
-Catatan:
+Keterangan:
 
 - `ext4` bisa grow dan shrink, tapi shrink harus hati-hati dan biasanya offline.
 - `xfs` bisa grow online, tapi tidak shrink.
@@ -1182,7 +1207,7 @@ Penjelasan:
 
 #### Konsep Network
 
-Hal yang harus dipahami:
+Konsep penting:
 
 - IP address
 - CIDR prefix
@@ -1702,7 +1727,7 @@ File/lokasi:
 
 ## 2.0 Services and User Management
 
-**Praktik setelah bab ini:** hubungkan identity, permission, service, dan log.
+**Fokus teknis:** hubungkan identity, permission, service, dan log.
 
 ```bash
 # Melihat identity user saat ini.
@@ -1718,13 +1743,13 @@ systemctl status ssh
 journalctl -u ssh --no-pager -n 50
 ```
 
-Catat: UID/GID, supplementary group, service state, unit file, log error, dan privilege yang dibutuhkan untuk tindakan admin.
+Aspek teknis: UID/GID, supplementary group, service state, unit file, log error, dan privilege yang dibutuhkan untuk tindakan admin.
 
-Bagian ini merangkum file/permission, user/group, process/job, software, systemd, logs, timers, dan container.
+Cakupan: file/permission, user/group, process/job, software, systemd, logs, timers, dan container.
 
 ### 2.1 Files, Directories, Links, Permissions
 
-Bagian ini membahas cara Linux melihat object di filesystem dan cara akses ke object tersebut dikontrol.
+Cakupan: cara Linux melihat object di filesystem dan cara akses ke object tersebut dikontrol.
 
 Ada empat hal yang perlu dipisahkan:
 
@@ -1792,8 +1817,6 @@ Tabel tipe:
 | Block device | `b` | `b` | Device storage yang dibaca/ditulis per block |
 | Socket | `s` | `s` | Endpoint komunikasi antar process |
 | Named pipe atau FIFO | `p` | `p` | Kanal komunikasi satu arah antar process |
-
-Catatan penting tentang hard link:
 
 - Hard link tidak punya simbol tipe file khusus di `ls -l`.
 - Hard link adalah nama tambahan yang menunjuk ke inode yang sama.
@@ -1886,7 +1909,7 @@ Cara berpikirnya:
 - Hard link berarti dua nama directory menunjuk inode yang sama.
 - Symlink punya inode sendiri dan isinya adalah path menuju target.
 
-Command yang berguna:
+Command utama:
 
 ```bash
 # Menampilkan inode number bersama daftar file.
@@ -2067,7 +2090,7 @@ setfacl -x u:alice file
 
 ### 2.2 Account Management
 
-Bagian ini membahas identitas lokal di Linux: user, group, password, shell, home directory, dan privilege.
+Cakupan: identitas lokal di Linux: user, group, password, shell, home directory, dan privilege.
 
 Konsep utama:
 
@@ -2165,7 +2188,7 @@ Field `/etc/group`:
 
 Jenis user:
 
-| Jenis | Arti | Catatan |
+| Jenis | Arti | Keterangan |
 |---|---|---|
 | root | superuser UID `0` | punya kontrol penuh, harus dipakai hati-hati |
 | regular user | user manusia biasa | dipakai untuk login harian |
@@ -2329,7 +2352,7 @@ Artinya:
 
 `su` vs `sudo`:
 
-| Tool | Fungsi | Catatan |
+| Tool | Fungsi | Keterangan |
 |---|---|---|
 | `su` | berpindah user atau membuka shell sebagai user lain | biasanya butuh password target user |
 | `su -` | login shell sebagai user lain | memuat environment login user target |
@@ -2355,12 +2378,12 @@ Bagian ini sebenarnya terdiri dari tiga konsep yang saling berhubungan, tetapi t
 | Job | Process atau pipeline yang dikelola oleh shell saat ini | `sleep 100 &`, `grep error log | less` |
 | Scheduling | Menjalankan command secara otomatis pada waktu tertentu | cronjob backup tiap malam |
 
-Gambaran mentalnya:
+Model proses:
 
-- Ketika kamu menjalankan command, shell membuat process.
+- Saat command dijalankan, shell membuat process.
 - Jika command itu berjalan di terminal yang sama, ia menjadi foreground job.
 - Jika command diberi `&`, ia menjadi background job.
-- Jika command dijadwalkan lewat `cron`, `at`, atau `systemd timer`, ia akan dibuat menjadi process pada waktu tertentu tanpa kamu mengetik manual.
+- Jika command dijadwalkan lewat `cron`, `at`, atau `systemd timer`, process dibuat pada waktu tertentu tanpa input manual.
 
 #### Process
 
@@ -2673,7 +2696,7 @@ Special string:
 
 User crontab vs system-wide cron:
 
-| Lokasi | Format | Catatan |
+| Lokasi | Format | Keterangan |
 |---|---|---|
 | user crontab | `* * * * * command` | diedit dengan `crontab -e` |
 | `/etc/crontab` | `* * * * * user command` | punya field user |
@@ -2709,7 +2732,7 @@ Penjelasan:
 
 Perbedaan scheduler:
 
-| Scheduler | Cocok Untuk | Catatan |
+| Scheduler | Cocok Untuk | Keterangan |
 |---|---|---|
 | `cron` | tugas berulang sederhana | environment minimal, format jadwal ringkas |
 | `anacron` | mesin yang tidak selalu menyala | menjalankan job periodik yang terlewat |
@@ -2727,7 +2750,7 @@ Workflow aman membuat scheduled task:
 
 ### 2.4 Software Management
 
-Bagian ini membahas cara Linux memasang, menghapus, memperbarui, dan memverifikasi software.
+Cakupan: cara Linux memasang, menghapus, memperbarui, dan memverifikasi software.
 
 Konsep utama:
 
@@ -2736,7 +2759,7 @@ Konsep utama:
 | Package | Bundle software berisi binary, library, metadata, dan script install/remove |
 | Repository | Sumber package yang dipercaya oleh package manager |
 | Dependency | Package lain yang dibutuhkan agar software berjalan |
-| Package database | Catatan package apa saja yang terpasang dan file apa yang dimiliki |
+| Package database | daftar package terpasang dan file yang dimiliki |
 | Signature | Mekanisme untuk memverifikasi asal dan integritas package |
 
 Gambaran mentalnya:
@@ -2944,13 +2967,13 @@ Verifikasi integritas package:
 
 Universal package:
 
-| Tool | Catatan |
+| Tool | Keterangan |
 |---|---|
 | Snap | package sandboxed, umum di Ubuntu |
 | Flatpak | umum untuk aplikasi desktop |
 | AppImage | aplikasi portable berbentuk satu file |
 
-Catatan:
+Keterangan:
 
 - Universal package bisa membawa dependency sendiri.
 - Update, permission, dan lokasi file bisa berbeda dari package distro.
@@ -2977,7 +3000,7 @@ rpm -Va
 
 ### 2.5 Systems Management with systemd
 
-Bagian ini membahas `systemd`, yaitu init system dan service manager yang banyak dipakai distro modern.
+Cakupan: `systemd`, yaitu init system dan service manager yang banyak dipakai distro modern.
 
 Konsep utama:
 
@@ -3315,7 +3338,7 @@ docker exec -it web env
 
 ## 3.0 Security
 
-**Praktik setelah bab ini:** buktikan security posture dari permission, sudo, network exposure, dan firewall.
+**Fokus teknis:** verifikasi security posture dari permission, sudo, network exposure, dan firewall.
 
 ```bash
 # Melihat privilege sudo untuk user saat ini.
@@ -3331,22 +3354,22 @@ ss -tulpn
 sudo nft list ruleset
 ```
 
-Catat: command yang boleh dijalankan via sudo, file SUID, port terbuka, owner process, dan rule firewall yang relevan.
+Aspek teknis: command yang boleh dijalankan via sudo, file SUID, port terbuka, owner process, dan rule firewall yang relevan.
 
-Bagian ini merangkum authentication, authorization, accounting, firewall, hardening, account security, cryptography, compliance, dan auditing.
+Cakupan: authentication, authorization, accounting, firewall, hardening, account security, cryptography, compliance, dan auditing.
 
 ### 3.1 Authorization, Authentication, Accounting
 
 Konsep:
 
-- authentication: membuktikan identitas
+- authentication: menunjukkan identitas
 - authorization: menentukan akses
 - accounting/auditing: mencatat aktivitas
 
 Penjelasan:
 
-- Authentication menjawab "siapa kamu?" melalui password, key, token, Kerberos ticket, certificate, atau MFA.
-- Authorization menjawab "kamu boleh melakukan apa?" melalui permission, group, sudoers, ACL, SELinux, Polkit, atau policy aplikasi.
+- Authentication menjawab identitas subjek melalui password, key, token, Kerberos ticket, certificate, atau MFA.
+- Authorization menjawab hak akses subjek melalui permission, group, sudoers, ACL, SELinux, Polkit, atau policy aplikasi.
 - Accounting/auditing menjawab "apa yang terjadi dan siapa yang melakukannya?" melalui log, auditd, dan session record.
 - Masalah login tidak selalu berarti password salah. Bisa juga account expired, PAM rule gagal, shell invalid, home permission salah, atau identity backend tidak reachable.
 - Saat troubleshooting akses, pisahkan masalah identity, authentication, authorization, dan environment login.
@@ -3948,7 +3971,7 @@ Bedakan konsep ini:
 |---|---|
 | Hash | Mengecek integritas data |
 | Encryption | Menyembunyikan isi data |
-| Signature | Membuktikan data dibuat/ditandatangani pihak tertentu |
+| Signature | menunjukkan data dibuat/ditandatangani pihak tertentu |
 | Certificate | Mengikat identitas dengan public key |
 | Key | Rahasia atau public material yang dipakai operasi crypto |
 
@@ -4021,7 +4044,7 @@ sudo cryptsetup close securedata
 
 Certificates:
 
-- certificate membuktikan identitas public key
+- certificate menunjukkan identitas public key
 - CA menandatangani certificate
 - private key harus dilindungi
 - expired certificate menyebabkan service TLS gagal
@@ -4030,14 +4053,14 @@ Penjelasan:
 
 - Hash dipakai untuk memverifikasi integritas, bukan untuk menyembunyikan data.
 - Encryption melindungi kerahasiaan data, baik saat disimpan maupun saat dikirim.
-- Signature membuktikan integritas dan asal data jika public key dipercaya.
+- Signature menunjukkan integritas dan asal data jika public key dipercaya.
 - TLS certificate bergantung pada trust chain dari CA ke certificate server.
 - Private key yang bocor harus dianggap kompromi dan diganti, bukan sekadar dipindahkan.
 - LUKS melindungi data saat disk offline atau dicuri, tetapi tidak melindungi data dari process yang sudah berjalan dengan akses sah.
 
 ### 3.6 Compliance, Integrity, and Auditing
 
-Bagian ini membahas cara membuktikan dan memantau bahwa sistem berada dalam kondisi yang diharapkan.
+Cakupan: cara memverifikasi dan memantau bahwa sistem berada dalam kondisi yang diharapkan.
 
 Konsep utama:
 
@@ -4189,7 +4212,7 @@ Directive logrotate:
 
 ## 4.0 Automation, Orchestration, and Scripting
 
-**Praktik setelah bab ini:** ubah command manual menjadi script kecil yang bisa diuji dan diulang.
+**Fokus teknis:** ubah command manual menjadi script kecil yang bisa diuji dan diulang.
 
 ```bash
 # Mengecek syntax script bash tanpa menjalankannya.
@@ -4202,9 +4225,9 @@ bash -x script.sh
 env | sort
 ```
 
-Catat: input, output, exit code, variable yang dipakai, error handling, dan bagian script yang harus dibuat idempotent.
+Aspek teknis: input, output, exit code, variable yang dipakai, error handling, dan bagian script yang harus dibuat idempotent.
 
-Bagian ini merangkum shell scripting, Python dasar, automation/config management, Git, CI/CD, dan AI best practices.
+Cakupan: shell scripting, Python dasar, automation/config management, Git, CI/CD, dan AI best practices.
 
 ### 4.1 Automation and Orchestration
 
@@ -4685,26 +4708,26 @@ Konsep utama:
 | Konsep | Arti |
 |---|---|
 | Repository | Folder project yang dilacak Git |
-| Working tree | File yang sedang kamu edit |
+| Working tree | File yang sedang diedit |
 | Staging area | Area persiapan sebelum commit |
 | Commit | Snapshot perubahan dengan pesan |
 | Branch | Jalur kerja terpisah |
 | Merge | Menggabungkan branch |
 | Tag | Penanda versi tertentu |
 
-Gambaran mentalnya:
+Model kerja:
 
-- Kamu mengubah file di working tree.
-- Kamu memilih perubahan yang ingin dimasukkan dengan `git add`.
-- Kamu menyimpan snapshot dengan `git commit`.
-- Kamu bisa melihat perubahan dengan `git diff`.
-- Kamu bisa bekerja di branch agar eksperimen tidak mengganggu branch utama.
+- Perubahan terjadi di working tree.
+- Perubahan yang masuk commit dipilih dengan `git add`.
+- Snapshot disimpan dengan `git commit`.
+- Perbedaan antar state dilihat dengan `git diff`.
+- Branch memisahkan eksperimen dari branch utama.
 
-Kenapa ini penting untuk catatan dan kerja Linux:
+Kenapa ini penting untuk kerja Linux:
 
 - Perubahan script bisa dilacak dan di-rollback.
 - Konfigurasi bisa direview sebelum diterapkan.
-- Catatan belajar punya riwayat perkembangan.
+- Dokumentasi teknis punya riwayat perubahan.
 - Tag bisa menandai versi stabil dari script atau dokumentasi.
 
 Workflow:
@@ -4806,7 +4829,7 @@ Jelaskan command yang dipakai dan risiko masing-masing.
 
 ## 5.0 Troubleshooting
 
-**Praktik setelah bab ini:** mulai dari gejala, lalu kumpulkan bukti OS, resource, log, dan network.
+**Fokus teknis:** mulai dari gejala, lalu kumpulkan data OS, resource, log, dan network.
 
 ```bash
 # Melihat log kernel terbaru.
@@ -4822,9 +4845,9 @@ df -h
 free -h
 ```
 
-Catat: waktu kejadian, error pertama, resource yang penuh, service terdampak, dan command validasi setelah perbaikan.
+Aspek teknis: waktu kejadian, error pertama, resource yang penuh, service terdampak, dan command validasi setelah perbaikan.
 
-Bagian ini merangkum monitoring, troubleshooting hardware/storage/OS, network, security, dan performance.
+Cakupan: monitoring, troubleshooting hardware/storage/OS, network, security, dan performance.
 
 ### 5.1 System Monitoring
 
@@ -4835,7 +4858,7 @@ Konsep utama:
 | Konsep | Arti |
 |---|---|
 | Metric | Angka terukur seperti CPU, memory, disk, latency |
-| Log | Catatan event yang menjelaskan apa yang terjadi |
+| Log | rekaman event yang menjelaskan apa yang terjadi |
 | Alert | Notifikasi saat kondisi melewati batas tertentu |
 | Baseline | Kondisi normal sistem sebagai pembanding |
 | Trend | Pola perubahan dari waktu ke waktu |
@@ -4988,7 +5011,7 @@ Common issues:
 Penjelasan:
 
 - Troubleshooting yang baik dimulai dari gejala, waktu kejadian, scope, dan perubahan terakhir.
-- Jangan langsung memperbaiki sebelum mengumpulkan bukti minimum seperti log, status service, disk usage, dan recent changes.
+- Jangan langsung memperbaiki sebelum mengumpulkan data minimum seperti log, status service, disk usage, dan recent changes.
 - Kernel panic biasanya butuh analisis log kernel, hardware, driver, atau crash dump.
 - Data corruption bisa berasal dari storage rusak, power loss, bug aplikasi, atau filesystem error.
 - Memory leak terlihat dari penggunaan memory process yang terus naik dan tidak turun setelah workload normal.
@@ -5276,7 +5299,7 @@ Security issue biasanya muncul sebagai akses ditolak, login gagal, service tidak
 Cara berpikirnya:
 
 - cek identity: user yang dipakai benar atau tidak
-- cek authentication: user berhasil membuktikan identitas atau tidak
+- cek authentication: user berhasil menunjukkan identitas atau tidak
 - cek authorization: user punya izin atau tidak
 - cek filesystem permission: owner, group, mode, ACL, parent directory
 - cek policy tambahan: SELinux, AppArmor, sudoers, PAM, firewall

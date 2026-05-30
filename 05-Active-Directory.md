@@ -1,17 +1,15 @@
 # Active Directory
 
-Catatan Active Directory pribadi untuk belajar serius, praktik command, troubleshooting, dan membangun fondasi identity berbasis domain.
+Sumber resmi utama:
 
-Fokus halaman ini adalah Active Directory Domain Services sebagai identity backbone: domain, forest, domain controller, DNS, Kerberos, LDAP, OU, group, GPO, replication, delegation, backup/restore, dan security operations.
-
-Referensi resmi yang berguna:
-
+- Windows Server Identity documentation: https://learn.microsoft.com/en-us/windows-server/identity/
 - Active Directory Domain Services overview: https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview
 - AD DS design and planning: https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/ad-ds-design-and-planning
 - Install or remove AD DS: https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/deploy/install-active-directory-domain-services--level-100-
 - Kerberos authentication overview: https://learn.microsoft.com/en-us/windows-server/security/kerberos/kerberos-authentication-overview
 - Group Policy overview: https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/group-policy/group-policy-overview
 - AD DS replication concepts: https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/replication/active-directory-replication-concepts
+- Migrate SYSVOL replication from FRS to DFSR: https://learn.microsoft.com/en-us/windows-server/storage/dfs-replication/migrate-sysvol-to-dfsr
 - Operations master roles: https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/fsmo-roles
 - AD DS sites: https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/active-directory-domain-services-sites
 - Securing privileged access: https://learn.microsoft.com/en-us/security/privileged-access-workstations/privileged-access-access-model
@@ -35,7 +33,6 @@ Area utama:
 
 ## Daftar Isi
 
-- [0. Cara Pakai Catatan Ini](#0-cara-pakai-catatan-ini)
 - [1.0 AD DS Fundamentals](#10-ad-ds-fundamentals)
   - [1.1 Apa Itu Active Directory](#11-apa-itu-active-directory)
   - [1.2 Forest, Tree, Domain, dan Trust](#12-forest-tree-domain-dan-trust)
@@ -101,34 +98,9 @@ Area utama:
 
 ---
 
-## 0. Cara Pakai Catatan Ini
-
-Active Directory tidak boleh dipahami hanya sebagai tempat membuat user. AD adalah sistem identity terdistribusi yang menjadi dasar login, authorization, policy, DNS internal, service authentication, audit, dan privilege management.
-
-Saat belajar atau troubleshooting AD, biasakan bertanya:
-
-- object apa yang bermasalah: user, computer, group, GPO, OU, DC, DNS record, SPN, atau trust
-- domain controller mana yang dipakai client saat masalah terjadi
-- apakah DNS client mengarah ke DNS internal yang benar
-- apakah waktu client, server, dan DC sinkron
-- apakah masalah authentication, authorization, replication, policy, atau network
-- event log mana yang membuktikan kegagalan
-- apakah perubahan sudah replicate ke semua DC
-- apakah privilege admin yang dipakai sesuai tier
-
-Pola belajar di file ini:
-
-- baca konsep singkat, lalu langsung jalankan command yang ada di section tersebut
-- sebelum melihat output atau membaca penjelasan lanjutan, prediksi dulu apa yang seharusnya terjadi
-- setelah command selesai, tulis observasi: output penting, gejala, layer/komponen yang terlibat, dan dugaan penyebab
-- ulangi praktik yang sama di hari berikutnya tanpa melihat catatan agar ingatan dibangun lewat recall
-- jalankan command hanya di sistem milik sendiri, lab pribadi, atau environment yang memang kamu diberi izin
-
----
-
 ## 1.0 AD DS Fundamentals
 
-**Praktik setelah bab ini:** lihat AD sebagai object, attribute, security descriptor, dan DNS-backed identity system.
+**Fokus teknis:** lihat AD sebagai object, attribute, security descriptor, dan DNS-backed identity system.
 
 ```powershell
 # Import module Active Directory.
@@ -141,7 +113,7 @@ Get-ADDomain
 Get-ADForest
 ```
 
-Catat: domain DN, forest, functional level, RID/Infrastructure/PDC role, dan DNS namespace yang dipakai identity.
+Aspek teknis: domain DN, forest, functional level, RID/Infrastructure/PDC role, dan DNS namespace yang dipakai identity.
 
 ### 1.1 Apa Itu Active Directory
 
@@ -326,17 +298,17 @@ Contoh OU:
 
 ```text
 DC=lab,DC=local
-├── OU=Admin
-│   ├── OU=Tier0
-│   ├── OU=Tier1
-│   └── OU=Tier2
-├── OU=Servers
-│   ├── OU=Domain Controllers
-│   ├── OU=File Servers
-│   └── OU=Web Servers
-├── OU=Workstations
-├── OU=Users
-└── OU=Groups
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ OU=Admin
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ OU=Tier0
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ OU=Tier1
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ OU=Tier2
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ OU=Servers
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ OU=Domain Controllers
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ OU=File Servers
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ OU=Web Servers
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ OU=Workstations
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ OU=Users
+Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ OU=Groups
 ```
 
 ```powershell
@@ -400,7 +372,7 @@ Get-ADDomain | Select-Object RIDMaster
 
 ## 2.0 Domain Controller and DNS
 
-**Praktik setelah bab ini:** buktikan DC discovery lewat DNS dan health domain controller.
+**Fokus teknis:** verifikasi DC discovery lewat DNS dan health domain controller.
 
 ```powershell
 # Query SRV LDAP domain controller.
@@ -413,7 +385,7 @@ nltest /dsgetdc:lab.local
 repadmin /replsummary
 ```
 
-Catat: DC yang ditemukan, site, DNS SRV record, replication failure, dan apakah client memakai DNS internal.
+Aspek teknis: DC yang ditemukan, site, DNS SRV record, replication failure, dan apakah client memakai DNS internal.
 
 ### 2.1 Domain Controller Role
 
@@ -620,7 +592,7 @@ Get-Service ADWS, DNS, DFSR, KDC, Netlogon | Select-Object Name, Status, StartTy
 
 ## 3.0 Identity Objects
 
-**Praktik setelah bab ini:** buat hubungan user, group, computer, OU, dan attribute menjadi terlihat.
+**Fokus teknis:** buat hubungan user, group, computer, OU, dan attribute menjadi terlihat.
 
 ```powershell
 # Cari user dan tampilkan attribute penting.
@@ -633,7 +605,7 @@ Get-ADPrincipalGroupMembership alice
 Get-ADComputer LAB-FS-01 -Properties OperatingSystem,LastLogonDate
 ```
 
-Catat: DN object, OU location, group membership, enabled state, last logon, dan attribute yang memengaruhi access.
+Aspek teknis: DN object, OU location, group membership, enabled state, last logon, dan attribute yang memengaruhi access.
 
 ### 3.1 Users
 
@@ -658,7 +630,7 @@ Attribute penting:
 
 Jenis user:
 
-| Jenis | Catatan |
+| Jenis | Keterangan |
 |---|---|
 | regular user | user manusia harian |
 | admin user | account admin terpisah dari user harian |
@@ -771,7 +743,7 @@ Test-ComputerSecureChannel -Repair -Credential LAB\AdminUser
 Add-Computer -DomainName lab.local -Restart
 ```
 
-Catatan: computer account biasa berbeda dari managed service account. Untuk secure channel komputer biasa, gunakan `Test-ComputerSecureChannel -Repair`, `Reset-ComputerMachinePassword`, `netdom resetpwd`, atau rejoin domain sesuai scenario.
+Keterangan: computer account biasa berbeda dari managed service account. Untuk secure channel komputer biasa, gunakan `Test-ComputerSecureChannel -Repair`, `Reset-ComputerMachinePassword`, `netdom resetpwd`, atau rejoin domain sesuai scenario.
 
 ```powershell
 # Reset password secure channel komputer lokal memakai netdom.
@@ -790,7 +762,7 @@ Service account dipakai aplikasi/service untuk authentication. Risiko utama adal
 
 Jenis:
 
-| Jenis | Catatan |
+| Jenis | Keterangan |
 |---|---|
 | domain user service account | umum tapi password harus dikelola |
 | Managed Service Account | managed password untuk satu host |
@@ -869,7 +841,7 @@ Set-ADUser alice -Description "Disabled on 2026-05-24 - offboarding ticket INC00
 
 ## 4.0 Authentication and Authorization
 
-**Praktik setelah bab ini:** bedakan authentication, ticket, token, group, dan permission.
+**Fokus teknis:** bedakan authentication, ticket, token, group, dan permission.
 
 ```powershell
 # Tampilkan ticket Kerberos aktif.
@@ -882,7 +854,7 @@ setspn -Q HTTP/web01.lab.local
 whoami /groups
 ```
 
-Catat: TGT, service ticket, SPN, group SID, privilege, dan permission resource yang akhirnya menentukan access.
+Aspek teknis: TGT, service ticket, SPN, group SID, privilege, dan permission resource yang akhirnya menentukan access.
 
 ### 4.1 Kerberos Flow
 
@@ -996,7 +968,7 @@ Port:
 
 LDAP bind:
 
-| Jenis | Catatan |
+| Jenis | Keterangan |
 |---|---|
 | simple bind | credential dikirim dalam mekanisme sederhana, harus pakai TLS |
 | SASL/Kerberos | lebih aman di domain |
@@ -1101,7 +1073,7 @@ w32tm /query /status
 
 ## 5.0 Group Policy
 
-**Praktik setelah bab ini:** buktikan GPO dari link, inheritance, result, dan SYSVOL.
+**Fokus teknis:** verifikasi GPO dari link, inheritance, result, dan SYSVOL.
 
 ```powershell
 # Tampilkan GPO yang ada.
@@ -1114,7 +1086,7 @@ Get-GPInheritance -Target "OU=Servers,DC=lab,DC=local"
 gpresult /h C:\Temp\gpresult.html
 ```
 
-Catat: GPO link order, enforced/block inheritance, security filtering, WMI filter, dan setting yang benar-benar applied.
+Aspek teknis: GPO link order, enforced/block inheritance, security filtering, WMI filter, dan setting yang benar-benar applied.
 
 ### 5.1 GPO Components and Processing
 
@@ -1240,7 +1212,7 @@ Hati-hati:
 
 - loopback bisa membuat policy terasa "misterius"
 - dokumentasikan OU yang memakai loopback
-- gunakan RSOP/gpresult untuk membuktikan sumber policy
+- gunakan RSOP/gpresult untuk menunjukkan sumber policy
 
 ```powershell
 # Buat registry policy loopback replace pada GPO.
@@ -1291,7 +1263,7 @@ dir \\lab.local\SYSVOL
 
 ## 6.0 Replication, Sites, and FSMO
 
-**Praktik setelah bab ini:** lihat AD sebagai sistem terdistribusi, bukan satu database tunggal.
+**Fokus teknis:** lihat AD sebagai sistem terdistribusi, bukan satu database tunggal.
 
 ```powershell
 # Tampilkan replication summary.
@@ -1304,7 +1276,7 @@ repadmin /showrepl
 netdom query fsmo
 ```
 
-Catat: source DC, destination DC, naming context, last success, failure code, site link, dan role holder.
+Aspek teknis: source DC, destination DC, naming context, last success, failure code, site link, dan role holder.
 
 ### 6.1 AD Replication Concepts
 
@@ -1493,7 +1465,7 @@ Get-WinEvent -LogName "Directory Service" -MaxEvents 30
 
 ## 7.0 Administration and Delegation
 
-**Praktik setelah bab ini:** bedakan admin convenience dari delegated least privilege.
+**Fokus teknis:** bedakan admin convenience dari delegated least privilege.
 
 ```powershell
 # Tampilkan ACL domain root.
@@ -1506,7 +1478,7 @@ Get-ADGroupMember "Domain Admins"
 Get-ADGroupMember "Protected Users"
 ```
 
-Catat: trustee, delegated right, inheritance, admin group, dan apakah permission sesuai tugas operasional.
+Aspek teknis: trustee, delegated right, inheritance, admin group, dan apakah permission sesuai tugas operasional.
 
 ### 7.1 Administrative Tools
 
@@ -1713,7 +1685,7 @@ Backup-GPO -All -Path C:\Temp\GPO-Backup
 
 ## 8.0 Security Engineering
 
-**Praktik setelah bab ini:** cari jalur privilege, exposure identity, dan kontrol pencegahan.
+**Fokus teknis:** cari jalur privilege, exposure identity, dan kontrol pencegahan.
 
 ```powershell
 # Tampilkan user dengan password tidak pernah expired.
@@ -1726,7 +1698,7 @@ Get-ADUser -Filter 'Enabled -eq $false' -Properties MemberOf | Where-Object Memb
 Search-ADAccount -ComputersOnly -AccountInactive -TimeSpan 90.00:00:00
 ```
 
-Catat: stale object, risky flag, privileged membership, service account, dan tindakan remediation yang aman.
+Aspek teknis: stale object, risky flag, privileged membership, service account, dan tindakan remediation yang aman.
 
 ### 8.1 Tiering Model and Privileged Access
 
@@ -1878,8 +1850,6 @@ Get-ADUser -LDAPFilter "(servicePrincipalName=*)" -Properties servicePrincipalNa
 Get-ADGroupMember "Protected Users"
 ```
 
-Catatan syntax PowerShell: attribute dengan tanda hubung kadang perlu diakses sebagai property string.
-
 ```powershell
 # Cari computer dengan constrained delegation memakai property string yang aman.
 Get-ADComputer -Filter * -Properties "msDS-AllowedToDelegateTo" | Where-Object {$_."msDS-AllowedToDelegateTo"} | Select-Object Name, "msDS-AllowedToDelegateTo"
@@ -1887,7 +1857,7 @@ Get-ADComputer -Filter * -Properties "msDS-AllowedToDelegateTo" | Where-Object {
 
 ### 8.5 Audit Policy, Event IDs, and Detection
 
-AD security bergantung pada logging yang benar. DC harus mengirim log ke SIEM/log collector agar attacker tidak bisa menghapus bukti lokal begitu saja.
+AD security bergantung pada logging yang benar. DC harus mengirim log ke SIEM/log collector agar attacker tidak bisa menghapus data lokal begitu saja.
 
 Audit category penting:
 
@@ -1993,7 +1963,7 @@ Get-ADObject -LDAPFilter "(userAccountControl:1.2.840.113556.1.4.803:=524288)" -
 
 ## 9.0 Backup, Restore, and Recovery
 
-**Praktik setelah bab ini:** pastikan recovery bisa dibuktikan, bukan hanya backup berhasil.
+**Fokus teknis:** pastikan recovery bisa diverifikasi, bukan hanya backup berhasil.
 
 ```powershell
 # Cek AD Recycle Bin feature.
@@ -2006,7 +1976,7 @@ wbadmin get versions
 wbadmin get status
 ```
 
-Catat: backup time, backup scope, restore path, AD Recycle Bin state, dan kapan perlu authoritative restore.
+Aspek teknis: backup time, backup scope, restore path, AD Recycle Bin state, dan kapan perlu authoritative restore.
 
 ### 9.1 System State Backup
 
@@ -2153,7 +2123,7 @@ Get-ADReplicationSubnet -Filter * | Select-Object Name, Site | Export-Csv C:\Tem
 
 ## 10.0 Troubleshooting Playbooks
 
-**Praktik setelah bab ini:** susun bukti AD dari client, DNS, DC, replication, dan policy.
+**Fokus teknis:** susun data AD dari client, DNS, DC, replication, dan policy.
 
 ```powershell
 # Cari DC yang dipilih client.
@@ -2166,7 +2136,7 @@ nltest /dsgetdc:lab.local /force
 Resolve-DnsName _ldap._tcp.Jakarta._sites.dc._msdcs.lab.local -Type SRV
 ```
 
-Catat: DC locator result, site mapping, DNS answer, time sync, secure channel, dan event log yang membuktikan akar masalah.
+Aspek teknis: DC locator result, site mapping, DNS answer, time sync, secure channel, dan event log yang menunjukkan akar masalah.
 
 ### 10.1 User Cannot Log In
 

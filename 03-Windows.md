@@ -1,8 +1,13 @@
 # Windows
 
-Catatan Windows pribadi untuk belajar serius, praktik command, dan membangun fondasi administrasi Windows.
+Sumber resmi utama:
 
-Fokus halaman ini adalah Windows client dan administrasi host. Active Directory dibahas hanya sebagai konteks singkat; pembahasan domain controller, GPO, Kerberos domain, replication, FSMO, dan AD security sebaiknya dibuat di `Active-Directory.md` setelah dasar Windows dan Windows Server matang.
+- Windows documentation: https://learn.microsoft.com/en-us/windows/
+- Windows client documentation: https://learn.microsoft.com/en-us/windows/client-management/
+- Windows security documentation: https://learn.microsoft.com/en-us/windows/security/
+- PowerShell documentation: https://learn.microsoft.com/en-us/powershell/
+- Windows commands reference: https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/windows-commands
+- Sysinternals documentation: https://learn.microsoft.com/en-us/sysinternals/
 
 Area utama:
 
@@ -17,7 +22,6 @@ Area utama:
 
 ## Daftar Isi
 
-- [0. Cara Pakai Catatan Ini](#0-cara-pakai-catatan-ini)
 - [1.0 Windows Fundamentals](#10-windows-fundamentals)
   - [1.1 Windows Client, Server, Workgroup, dan Domain](#11-windows-client-server-workgroup-dan-domain)
   - [1.2 Windows Architecture dan Boot](#12-windows-architecture-dan-boot)
@@ -46,7 +50,7 @@ Area utama:
   - [5.3 PowerShell Remoting](#53-powershell-remoting)
   - [5.4 Scripting Basics](#54-scripting-basics)
 - [6.0 Troubleshooting and Operations](#60-troubleshooting-and-operations)
-  - [6.1 Event Logs and Evidence](#61-event-logs-and-evidence)
+  - [6.1 Event Logs and Data Teknis](#61-event-logs-and-data-teknis)
   - [6.2 Performance and Resource Troubleshooting](#62-performance-and-resource-troubleshooting)
   - [6.3 Boot, Recovery, dan Repair](#63-boot-recovery-dan-repair)
   - [6.4 Network Troubleshooting](#64-network-troubleshooting)
@@ -64,30 +68,9 @@ Area utama:
 
 ---
 
-## 0. Cara Pakai Catatan Ini
-
-Saat belajar atau bekerja dengan Windows, jangan hanya menghafal menu GUI. Biasakan menjawab:
-
-- masalah terjadi di user profile, service, driver, network, storage, security, atau aplikasi
-- command apa yang membuktikan kondisi sistem
-- event log mana yang relevan
-- perubahan mana yang persistent dan mana yang sementara
-- apakah masalah hanya terjadi pada satu user, satu komputer, atau semua komputer
-- apakah host standalone, workgroup, domain-joined, atau hybrid-managed
-
-Pola belajar di file ini:
-
-- baca konsep singkat, lalu langsung jalankan command yang ada di section tersebut
-- sebelum melihat output atau membaca penjelasan lanjutan, prediksi dulu apa yang seharusnya terjadi
-- setelah command selesai, tulis observasi: output penting, gejala, layer/komponen yang terlibat, dan dugaan penyebab
-- ulangi praktik yang sama di hari berikutnya tanpa melihat catatan agar ingatan dibangun lewat recall
-- jalankan command hanya di sistem milik sendiri, lab pribadi, atau environment yang memang kamu diberi izin
-
----
-
 ## 1.0 Windows Fundamentals
 
-**Praktik setelah bab ini:** kenali OS, identity lokal, process, service, dan event dasar.
+**Fokus teknis:** kenali OS, identity lokal, process, service, dan event dasar.
 
 ```powershell
 # Tampilkan informasi versi Windows.
@@ -100,7 +83,7 @@ whoami /all
 Get-Process | Sort-Object CPU -Descending | Select-Object -First 10
 ```
 
-Catat: edition/build, SID, group membership, privilege token, process penting, dan service yang terkait.
+Aspek teknis: edition/build, SID, group membership, privilege token, process penting, dan service yang terkait.
 
 ### 1.1 Windows Client, Server, Workgroup, dan Domain
 
@@ -149,13 +132,13 @@ Workgroup vs domain:
 | Scale | kecil/lab/home | organisasi |
 | Admin | per host | centralized delegation |
 
-Kenapa urutannya Windows dulu:
+Urutan fondasi Windows:
 
-- Kamu perlu paham local user sebelum domain user.
-- Kamu perlu paham local policy sebelum Group Policy.
-- Kamu perlu paham NTFS permission sebelum file server permission.
-- Kamu perlu paham DNS client sebelum AD DNS.
-- Kamu perlu paham Event Viewer sebelum membaca event domain controller.
+- Local user sebelum domain user.
+- Local policy sebelum Group Policy.
+- NTFS permission sebelum file server permission.
+- DNS client sebelum AD DNS.
+- Event Viewer sebelum event domain controller.
 
 Kalau langsung masuk AD tanpa dasar Windows, banyak error akan terasa abstrak. Contohnya, user gagal login domain bisa disebabkan DNS, time sync, password, locked account, network, cached credential, secure channel, atau Kerberos. Dasar Windows membantu memisahkan kemungkinan itu.
 
@@ -200,7 +183,7 @@ User mode vs kernel mode:
 | Akses hardware | tidak langsung | langsung lewat driver/kernel |
 | Crash impact | biasanya hanya process/app | bisa BSOD/system-wide |
 | Contoh | browser, Notepad, PowerShell | storage driver, network driver |
-| Debug evidence | Application log, dump app | memory dump, BugCheck, System log |
+| Debug data | Application log, dump app | memory dump, BugCheck, System log |
 
 Boot flow modern:
 
@@ -430,7 +413,7 @@ Get-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion
 reg export HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion currentversion.reg
 ```
 
-Catatan:
+Keterangan:
 
 - Backup registry sebelum perubahan manual.
 - Banyak policy domain menulis registry di bawah area `Policies`.
@@ -530,7 +513,7 @@ Get-ScheduledTask | Where-Object State -eq Ready
 
 ## 2.0 System Administration
 
-**Praktik setelah bab ini:** lakukan administrasi lokal dengan bukti sebelum dan sesudah perubahan.
+**Fokus teknis:** lakukan administrasi lokal dengan data sebelum dan sesudah perubahan.
 
 ```powershell
 # Tampilkan local user.
@@ -543,15 +526,15 @@ Get-LocalGroupMember Administrators
 Get-Service | Where-Object Status -eq Running
 ```
 
-Catat: object yang berubah, permission yang diberikan, service state sebelum/sesudah, dan event log yang membuktikan perubahan.
+Aspek teknis: object yang berubah, permission yang diberikan, service state sebelum/sesudah, dan event log yang menunjukkan perubahan.
 
 ### 2.1 Local Users and Groups
 
 Local user disimpan di komputer lokal. Ini berbeda dari domain user yang dikelola Active Directory.
 
-Local user hanya valid di komputer tempat account itu dibuat. Jika kamu membuat user `labuser` di PC-A, user itu tidak otomatis ada di PC-B. Windows membedakan identity menggunakan SID, bukan hanya nama. Dua komputer bisa sama-sama punya user bernama `labuser`, tetapi SID-nya berbeda, sehingga Windows menganggap itu dua identity berbeda.
+Local user hanya valid di komputer tempat account itu dibuat. Jika user `labuser` dibuat di PC-A, user itu tidak otomatis ada di PC-B. Windows membedakan identity menggunakan SID, bukan hanya nama. Dua komputer bisa sama-sama punya user bernama `labuser`, tetapi SID-nya berbeda, sehingga Windows menganggap itu dua identity berbeda.
 
-Local group dipakai untuk memberi hak ke kumpulan user. Best practice-nya: beri permission ke group, bukan langsung ke user satu per satu. Dengan begitu saat orang masuk/keluar role, kamu cukup mengubah membership group.
+Local group dipakai untuk memberi hak ke kumpulan user. Best practice-nya: beri permission ke group, bukan langsung ke user satu per satu. Saat orang masuk/keluar role, perubahan cukup dilakukan pada membership group.
 
 Local group penting:
 
@@ -769,7 +752,7 @@ Contoh mapping:
 
 Partition style:
 
-| Style | Catatan |
+| Style | Keterangan |
 |---|---|
 | MBR | legacy, limit lama |
 | GPT | modern, umum untuk UEFI |
@@ -900,7 +883,7 @@ winget search vscode
 Get-HotFix
 ```
 
-Catatan:
+Keterangan:
 
 - `Win32_Product` bisa lambat dan memicu repair MSI pada beberapa sistem; pakai hati-hati.
 - Untuk inventory enterprise, tool management seperti Intune, SCCM, atau inventory agent lebih cocok.
@@ -982,7 +965,7 @@ pnputil /enum-drivers
 
 ## 3.0 Windows Networking
 
-**Praktik setelah bab ini:** buktikan DNS, route, interface, dan koneksi TCP dari host Windows.
+**Fokus teknis:** verifikasi DNS, route, interface, dan koneksi TCP dari host Windows.
 
 ```powershell
 # Tampilkan konfigurasi IP lengkap.
@@ -998,7 +981,7 @@ Test-NetConnection example.com -Port 443
 route print
 ```
 
-Catat: DNS server, suffix, gateway, route yang dipilih, port reachability, dan apakah failure terjadi di DNS, route, firewall, atau service.
+Aspek teknis: DNS server, suffix, gateway, route yang dipilih, port reachability, dan apakah failure terjadi di DNS, route, firewall, atau service.
 
 ### 3.1 TCP/IP Configuration
 
@@ -1092,7 +1075,7 @@ Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses 1.1.1.1,8
 
 Windows name resolution bisa melibatkan hosts file, DNS cache, DNS server, LLMNR/NetBIOS pada environment tertentu.
 
-Name resolution adalah proses mengubah nama seperti `server01` atau `app.example.com` menjadi IP address. Windows bisa mencoba beberapa mekanisme tergantung konfigurasi. Untuk environment modern, DNS adalah yang utama. Hosts file dan DNS cache sering membuat troubleshooting membingungkan karena jawaban bisa datang dari cache/lokal, bukan dari DNS server yang kamu kira.
+Name resolution adalah proses mengubah nama seperti `server01` atau `app.example.com` menjadi IP address. Windows bisa mencoba beberapa mekanisme tergantung konfigurasi. Untuk environment modern, DNS adalah yang utama. Hosts file dan DNS cache sering membuat troubleshooting membingungkan karena jawaban bisa datang dari cache/lokal, bukan dari DNS server yang diasumsikan.
 
 Hosts file:
 
@@ -1112,7 +1095,7 @@ Application minta resolve nama
 
 Jenis nama:
 
-| Nama | Contoh | Catatan |
+| Nama | Contoh | Keterangan |
 |---|---|---|
 | Hostname pendek | `server01` | bisa bergantung DNS suffix/search |
 | FQDN | `server01.example.com` | nama lengkap |
@@ -1184,7 +1167,7 @@ Remote access:
 
 Remote access dependency:
 
-| Teknologi | Service/Port Umum | Catatan |
+| Teknologi | Service/Port Umum | Keterangan |
 |---|---|---|
 | RDP | TCP/UDP 3389 | butuh Remote Desktop enabled dan user punya hak |
 | WinRM HTTP | TCP 5985 | PowerShell Remoting default internal |
@@ -1304,7 +1287,7 @@ Get-SmbOpenFile
 
 ## 4.0 Windows Security
 
-**Praktik setelah bab ini:** lihat security dari account, ACL, audit policy, firewall, dan Defender.
+**Fokus teknis:** lihat security dari account, ACL, audit policy, firewall, dan Defender.
 
 ```powershell
 # Tampilkan audit policy saat ini.
@@ -1320,7 +1303,7 @@ Get-NetFirewallProfile
 Get-Acl C:\Windows | Format-List
 ```
 
-Catat: audit yang aktif, protection status, firewall profile, owner ACL, inheritance, dan permission yang terlalu luas.
+Aspek teknis: audit yang aktif, protection status, firewall profile, owner ACL, inheritance, dan permission yang terlalu luas.
 
 ### 4.1 Authentication, Tokens, dan Credential
 
@@ -1400,7 +1383,7 @@ control keymgr.dll
 
 Windows Defender dan security feature modern membantu endpoint protection.
 
-Endpoint security bukan hanya antivirus. Windows modern punya beberapa lapisan: antivirus, firewall, SmartScreen, attack surface reduction, exploit protection, controlled folder access, BitLocker, dan logging. Tujuannya bukan membuat host "tidak mungkin diserang", tetapi mengurangi peluang eksekusi malware, membatasi lateral movement, dan memberi bukti saat incident.
+Endpoint security bukan hanya antivirus. Windows modern punya beberapa lapisan: antivirus, firewall, SmartScreen, attack surface reduction, exploit protection, controlled folder access, BitLocker, dan logging. Tujuannya bukan membuat host "tidak mungkin diserang", tetapi mengurangi peluang eksekusi malware, membatasi lateral movement, dan memberi data saat incident.
 
 | Fitur | Fungsi |
 |---|---|
@@ -1447,7 +1430,7 @@ Start-MpScan -ScanType QuickScan
 
 ### 4.3 Logging, Auditing, dan Event Viewer
 
-Event log adalah sumber bukti utama Windows.
+Event log adalah sumber data utama Windows.
 
 Windows mencatat banyak kejadian sebagai event. Event log bukan hanya untuk error; ia juga dipakai untuk audit login, perubahan service, update, PowerShell activity, Defender, driver, dan crash. Saat troubleshooting, event log memberi timeline: apa yang terjadi duluan, apa yang berubah, dan error apa yang muncul.
 
@@ -1577,7 +1560,7 @@ Get-NetFirewallRule -Direction Inbound -Enabled True
 
 ## 5.0 PowerShell
 
-**Praktik setelah bab ini:** gunakan PowerShell sebagai object pipeline, bukan sekadar shell teks.
+**Fokus teknis:** gunakan PowerShell sebagai object pipeline, bukan sekadar shell teks.
 
 ```powershell
 # Cari command terkait service.
@@ -1590,7 +1573,7 @@ Get-Service | Get-Member
 Get-Service | Where-Object Status -eq Running | Select-Object Name, Status, StartType
 ```
 
-Catat: object type, property yang tersedia, pipeline input/output, dan perbedaan object PowerShell dengan text output biasa.
+Aspek teknis: object type, property yang tersedia, pipeline input/output, dan perbedaan object PowerShell dengan text output biasa.
 
 ### 5.1 Cmdlet, Object, Pipeline, dan Help
 
@@ -1675,7 +1658,7 @@ Get-Process | Select-Object Name, Id, CPU
 
 Module menyimpan cmdlet/function/provider.
 
-PowerShell diperluas lewat module. Module bisa berasal dari Windows bawaan, role/feature tertentu, aplikasi, atau PowerShell Gallery. Kalau sebuah command tidak ditemukan, bisa jadi module belum terpasang, belum diimport, atau kamu memakai PowerShell versi yang berbeda.
+PowerShell diperluas lewat module. Module bisa berasal dari Windows bawaan, role/feature tertentu, aplikasi, atau PowerShell Gallery. Kalau sebuah command tidak ditemukan, penyebabnya bisa module belum terpasang, belum diimport, atau versi PowerShell berbeda.
 
 | Item | Arti |
 |---|---|
@@ -1854,7 +1837,7 @@ try {
 
 ## 6.0 Troubleshooting and Operations
 
-**Praktik setelah bab ini:** gabungkan event log, service state, performance counter, dan network test.
+**Fokus teknis:** gabungkan event log, service state, performance counter, dan network test.
 
 ```powershell
 # Ambil error System log terbaru.
@@ -1867,13 +1850,13 @@ Get-Service | Where-Object Status -eq Stopped
 Get-Counter '\Processor(_Total)\% Processor Time','\Memory\Available MBytes'
 ```
 
-Catat: waktu error, event ID, service terdampak, resource pressure, dan tindakan validasi setelah perbaikan.
+Aspek teknis: waktu error, event ID, service terdampak, resource pressure, dan tindakan validasi setelah perbaikan.
 
-### 6.1 Event Logs and Evidence
+### 6.1 Event Logs and Data Teknis
 
-Saat troubleshooting Windows, kumpulkan bukti sebelum mengubah sistem.
+Saat troubleshooting Windows, kumpulkan data sebelum mengubah sistem.
 
-Troubleshooting yang baik dimulai dari evidence, bukan tebakan. Windows punya banyak tempat untuk melihat bukti: Event Viewer, service status, process list, performance counter, update history, firewall log, Defender log, dan dump file. Kalau langsung mengubah setting tanpa mencatat kondisi awal, kamu bisa kehilangan jejak root cause.
+Troubleshooting yang baik dimulai dari data teknis, bukan tebakan. Windows punya banyak tempat untuk melihat data: Event Viewer, service status, process list, performance counter, update history, firewall log, Defender log, dan dump file. Perubahan setting tanpa kondisi awal yang jelas bisa menghilangkan jejak root cause.
 
 Pertanyaan awal:
 
@@ -1884,11 +1867,11 @@ Pertanyaan awal:
 | Apa error persisnya | bedakan access denied, timeout, crash, not found |
 | Apa yang berubah | update, driver, policy, aplikasi, password |
 | Apakah bisa direproduce | menentukan intermittent atau konsisten |
-| Apa bukti paling dekat | event ID, log aplikasi, dump, counter |
+| Apa data paling dekat | event ID, log aplikasi, dump, counter |
 
-Evidence checklist:
+Checklist data teknis:
 
-| Evidence | Command/Tool |
+| Data Teknis | Command/Tool |
 |---|---|
 | OS version/build | `Get-ComputerInfo` |
 | Recent system events | `Get-WinEvent -LogName System` |
@@ -1898,15 +1881,15 @@ Evidence checklist:
 | Network path | `Test-NetConnection`, `tracert` |
 | Updates | `Get-HotFix` |
 
-Evidence hierarchy:
+Hierarki data teknis:
 
-| Bukti | Kekuatan |
+| Data | Kekuatan |
 |---|---|
 | Event log dengan timestamp | kuat |
 | Command output saat masalah terjadi | kuat |
 | Screenshot error | sedang |
 | User report tanpa detail | awal, perlu verifikasi |
-| Dugaan tanpa bukti | lemah |
+| Dugaan tanpa data | lemah |
 
 Timeline:
 
@@ -1918,7 +1901,7 @@ Timeline:
 09:25 koneksi stabil
 ```
 
-Command evidence:
+Command untuk membaca data teknis:
 
 ```powershell
 # Melihat ringkasan OS.
@@ -2111,7 +2094,7 @@ Get-NetTCPConnection
 
 ## 7.0 Senior Deep Dive
 
-**Praktik setelah bab ini:** bedakan gejala user-level dari bukti OS-level.
+**Fokus teknis:** bedakan gejala user-level dari data OS-level.
 
 ```powershell
 # Melihat process beserta command line lewat CIM.
@@ -2124,7 +2107,7 @@ Get-NetTCPConnection
 Get-CimInstance Win32_SystemDriver | Select-Object Name, State, StartMode
 ```
 
-Catat: parent-child process, command line mencurigakan, TCP state, driver state, dan bukti yang layak masuk timeline investigasi.
+Aspek teknis: parent-child process, command line mencurigakan, TCP state, driver state, dan data yang layak masuk timeline investigasi.
 
 ### 7.1 Windows Internals Overview
 
@@ -2253,7 +2236,7 @@ Sysmon:
 | Driver Loaded | driver load |
 | Image Loaded | DLL load |
 
-Catatan:
+Keterangan:
 
 - Sysmon perlu config yang baik agar signal tidak terlalu berisik.
 - Process Monitor sangat kuat, tetapi capture bisa besar; filter dulu sebelum investigasi panjang.
@@ -2273,7 +2256,7 @@ Contoh penggunaan:
 
 Template incident Windows:
 
-Runbook adalah panduan langkah kerja saat masalah terjadi. Runbook yang baik tidak hanya berisi "restart service", tetapi juga evidence yang perlu dikumpulkan, kondisi rollback, cara validasi, dan kapan eskalasi. Tujuannya supaya incident bisa ditangani konsisten meskipun orang yang menangani berbeda.
+Runbook adalah panduan langkah kerja saat masalah terjadi. Runbook yang baik tidak hanya berisi "restart service", tetapi juga data teknis yang perlu dikumpulkan, kondisi rollback, cara validasi, dan kapan eskalasi. Tujuannya supaya incident bisa ditangani konsisten meskipun orang yang menangani berbeda.
 
 | Field | Isi |
 |---|---|
@@ -2281,10 +2264,10 @@ Runbook adalah panduan langkah kerja saat masalah terjadi. Runbook yang baik tid
 | Symptom | error, event ID, timeout, crash |
 | Start time | kapan mulai |
 | Last change | update, policy, driver, software |
-| Evidence | event log, command output, screenshot, dump |
+| Data teknis | event log, command output, screenshot, dump |
 | Theory | dugaan penyebab |
 | Action | perubahan yang dilakukan |
-| Validation | bukti pulih |
+| Validation | indikasi pulih |
 | Rollback | cara kembali |
 
 Runbook yang baik:
@@ -2293,10 +2276,10 @@ Runbook yang baik:
 |---|---|
 | Scope | siapa/apa yang terdampak |
 | Preconditions | akses/tool apa yang dibutuhkan |
-| Evidence | log/counter/output apa yang harus disimpan |
+| Data teknis | log/counter/output apa yang harus disimpan |
 | Action | langkah yang dilakukan |
 | Decision point | kapan lanjut, rollback, atau eskalasi |
-| Validation | bukti service pulih |
+| Validation | indikasi service pulih |
 | Documentation | apa yang dicatat setelah selesai |
 
 Contoh runbook service down:
@@ -2378,8 +2361,6 @@ Mandatory Integrity Control:
 | High | elevated administrator |
 | System | service/system process |
 
-Catatan penting:
-
 - DACL menjawab "boleh atau tidak".
 - Integrity level menjawab "apakah level caller cukup tinggi".
 - Process low integrity tidak bisa menulis ke object medium integrity walau DACL terlihat mengizinkan.
@@ -2439,7 +2420,7 @@ sc.exe sdshow Spooler
 
 LSASS adalah process inti security Windows. Ia menangani local security policy, logon session, token creation, authentication package, dan banyak operasi credential.
 
-Saat user login, Windows perlu membuktikan identitas user dan membuat token. LSASS berada di pusat proses ini. Karena LSASS berkaitan dengan credential dan token, ia menjadi komponen yang sangat sensitif. Banyak kontrol keamanan modern berusaha melindungi credential agar tidak mudah dicuri dari memory atau disk.
+Saat user login, Windows perlu menunjukkan identitas user dan membuat token. LSASS berada di pusat proses ini. Karena LSASS berkaitan dengan credential dan token, ia menjadi komponen yang sangat sensitif. Banyak kontrol keamanan modern berusaha melindungi credential agar tidak mudah dicuri dari memory atau disk.
 
 Logon flow lokal sederhana:
 
@@ -2521,11 +2502,11 @@ Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4625} -MaxEvents 20
 Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4624} -MaxEvents 20
 ```
 
-Catatan:
+Keterangan:
 
 - Jangan dump LSASS pada production kecuali ada proses incident response yang sah dan disetujui.
 - Credential Guard/LSA protection bisa memengaruhi compatibility tool lama.
-- Investigasi credential theft harus menjaga chain of custody dan bukti.
+- Investigasi credential theft harus menjaga chain of custody dan data.
 
 ### 7.7 Windows Servicing, Component Store, dan Image Health
 
@@ -2688,16 +2669,16 @@ Reliability Monitor membantu melihat pola: kapan crash mulai terjadi, aplikasi a
 
 Dump type:
 
-| Dump | Isi | Catatan |
+| Dump | Isi | Keterangan |
 |---|---|---|
 | Small memory dump | ringkasan crash | `C:\Windows\Minidump` |
 | Kernel memory dump | kernel memory | cukup untuk banyak driver crash |
 | Complete memory dump | seluruh memory | besar, perlu pagefile cukup |
 | Active memory dump | memory aktif | lebih efisien pada server besar |
 
-Cara membaca evidence:
+Cara membaca data teknis:
 
-| Evidence | Ditanyakan |
+| Data teknis | Ditanyakan |
 |---|---|
 | Stop code | jenis crash umum |
 | Faulting module | driver/module yang dicurigai |
@@ -2706,9 +2687,9 @@ Cara membaca evidence:
 | Hardware event | disk/memory/NIC error |
 | Reproducible | bisa dipicu ulang atau random |
 
-Evidence BSOD:
+Data teknis BSOD:
 
-| Evidence | Lokasi/Command |
+| Data teknis | Lokasi/Command |
 |---|---|
 | Minidump | `C:\Windows\Minidump` |
 | Full dump | `C:\Windows\MEMORY.DMP` |
@@ -2751,7 +2732,7 @@ Driver Verifier:
 
 ### 7.10 Expert Troubleshooting Playbooks
 
-Expert troubleshooting selalu dimulai dari scope dan evidence. Tujuannya bukan mencoba semua command, tetapi mempersempit failure domain.
+Expert troubleshooting selalu dimulai dari scope dan data teknis. Tujuannya bukan mencoba semua command, tetapi mempersempit failure domain.
 
 Access denied playbook:
 

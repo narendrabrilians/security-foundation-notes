@@ -1,19 +1,29 @@
 # HTTP
 
-Catatan HTTP pribadi untuk belajar serius, praktik command, dan membangun fondasi web security dari level protocol.
-
-HTTP terlihat sederhana karena browser menyembunyikan detailnya. Tetapi untuk memahami web security, bug, proxy behavior, cache, authentication, cookie, TLS, dan request parsing, HTTP perlu dipelajari sampai level raw request dan response.
-
-Referensi standar yang berguna:
+Sumber standar utama:
 
 - HTTP Semantics: https://www.rfc-editor.org/rfc/rfc9110
 - HTTP/1.1: https://www.rfc-editor.org/rfc/rfc9112
 - HTTP/2: https://www.rfc-editor.org/rfc/rfc9113
 - HTTP/3: https://www.rfc-editor.org/rfc/rfc9114
+- HTTP Field Name Registry: https://www.iana.org/assignments/http-fields/http-fields.xhtml
+- HTTP Status Code Registry: https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+- TLS 1.3: https://www.rfc-editor.org/rfc/rfc8446
+- OWASP Cheat Sheet Series: https://cheatsheetseries.owasp.org/
+
+Area utama:
+
+| Area | Cakupan |
+|---|---|
+| Fundamentals | URL, origin, request, response, method, status code |
+| HTTP/1.1 Low-Level | request line, CRLF, Host, Content-Length, chunked body, raw request |
+| Headers, Cookies, and Auth | header scope, cookie attribute, Authorization, CORS, content negotiation |
+| Caching, Proxy, and TLS | Cache-Control, ETag, forward/reverse proxy, SNI, certificate |
+| HTTP Versions | HTTP/1.1, HTTP/2, HTTP/3, ALPN, transport behavior |
+| Web Security | parser boundary, security header, request smuggling, SSRF, cache poisoning |
 
 ## Daftar Isi
 
-- [0. Cara Pakai Catatan Ini](#0-cara-pakai-catatan-ini)
 - [1.0 HTTP Fundamentals](#10-http-fundamentals)
   - [1.1 HTTP Sebagai Application Layer Protocol](#11-http-sebagai-application-layer-protocol)
   - [1.2 URL, Origin, Authority, dan Path](#12-url-origin-authority-dan-path)
@@ -53,35 +63,9 @@ Referensi standar yang berguna:
 
 ---
 
-## 0. Cara Pakai Catatan Ini
-
-Belajar HTTP jangan hanya lewat browser. Browser terlalu banyak membantu: menambah header, mengikuti redirect, menyimpan cookie, melakukan TLS, memakai cache, dan menerapkan CORS. Untuk benar-benar paham, biasakan melihat request dan response mentah.
-
-Saat menganalisis HTTP, selalu tanyakan:
-
-- scheme yang dipakai `http` atau `https`
-- host dan port tujuan
-- method yang dikirim
-- path dan query yang dikirim
-- header apa yang memengaruhi routing, auth, cache, dan parsing
-- body dikirim dengan `Content-Length` atau `Transfer-Encoding`
-- response status code apa
-- proxy/load balancer/WAF ikut mengubah request atau tidak
-- browser policy seperti CORS atau cookie attribute ikut berperan atau tidak
-
-Pola belajar di file ini:
-
-- baca konsep singkat, lalu langsung jalankan command yang ada di section tersebut
-- sebelum melihat output atau membaca penjelasan lanjutan, prediksi dulu apa yang seharusnya terjadi
-- setelah command selesai, tulis observasi: output penting, gejala, layer/komponen yang terlibat, dan dugaan penyebab
-- ulangi praktik yang sama di hari berikutnya tanpa melihat catatan agar ingatan dibangun lewat recall
-- jalankan command hanya di sistem milik sendiri, lab pribadi, atau environment yang memang kamu diberi izin
-
----
-
 ## 1.0 HTTP Fundamentals
 
-**Praktik setelah bab ini:** lihat HTTP sebagai request, response, header, body, dan status code yang bisa dibaca mentah.
+**Fokus teknis:** lihat HTTP sebagai request, response, header, body, dan status code yang bisa dibaca mentah.
 
 ```bash
 # Melihat request/response HTTP yang dibuat curl secara verbose.
@@ -91,7 +75,7 @@ curl -v http://example.com/
 curl -I http://example.com/
 ```
 
-Catat: request line, status line, header penting, body, redirect, dan apakah server menutup koneksi.
+Aspek teknis: request line, status line, header penting, body, redirect, dan apakah server menutup koneksi.
 
 ### 1.1 HTTP Sebagai Application Layer Protocol
 
@@ -211,7 +195,7 @@ curl -v http://example.com/
 curl -I http://example.com/
 ```
 
-Yang harus diamati:
+Observasi:
 
 - request line yang dikirim client
 - status line yang dikembalikan server
@@ -222,7 +206,7 @@ Yang harus diamati:
 
 Method memberi tahu maksud request.
 
-| Method | Fungsi Umum | Catatan |
+| Method | Fungsi Umum | Keterangan |
 |---|---|---|
 | GET | mengambil resource | sebaiknya safe dan idempotent |
 | HEAD | seperti GET tapi tanpa body response | cek header/metadata |
@@ -266,7 +250,7 @@ Perbedaan yang sering penting:
 
 ## 2.0 HTTP/1.1 Low-Level
 
-**Praktik setelah bab ini:** rangkai HTTP/1.1 manual sampai kamu bisa melihat CRLF, Host, dan blank line.
+**Fokus teknis:** struktur HTTP/1.1 manual terlihat dari CRLF, Host, dan blank line.
 
 ```bash
 # Membuka koneksi TCP plaintext ke web server Google pada port 80.
@@ -276,7 +260,7 @@ telnet www.google.com 80
 printf 'GET / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n' | nc example.com 80
 ```
 
-Catat: request line, `Host`, blank line, response status, dan perbedaan request manual dengan browser.
+Aspek teknis: request line, `Host`, blank line, response status, dan perbedaan request manual dengan browser.
 
 ### 2.1 Request Line dan CRLF
 
@@ -333,7 +317,7 @@ Connection: close
 
 ```
 
-Tekan Enter dua kali setelah `Connection: close`. Tujuannya bukan menghafal response Google, karena response publik bisa berubah, tetapi melihat sendiri bahwa HTTP/1.1 plaintext hanyalah teks dengan request line, header, blank line, lalu response.
+Request HTTP/1.1 diakhiri dengan blank line setelah `Connection: close`. Response publik bisa berubah, tetapi format dasarnya tetap berupa request line, header, blank line, lalu response.
 
 ### 2.2 Host Header dan Virtual Hosting
 
@@ -371,13 +355,13 @@ Praktik langsung:
 
 ```bash
 # Memaksa hostname resolve ke IP tertentu tanpa mengubah DNS sistem.
-curl --resolve example.com:443:93.184.216.34 https://example.com/
+curl --resolve example.com:443:<server-ip> https://example.com/
 
 # Mengarahkan koneksi ke endpoint lain sambil mempertahankan URL, Host, dan SNI.
 curl --connect-to example.com:443:127.0.0.1:8443 https://example.com/
 ```
 
-Yang harus dipahami:
+Konsep penting:
 
 - `--resolve` memengaruhi DNS resolution di sisi curl
 - `--connect-to` memengaruhi tujuan koneksi TCP/TLS
@@ -477,7 +461,7 @@ Terminal 2:
 printf 'POST /upload HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n5\r\nhello\r\n6\r\n world\r\n0\r\n\r\n' | nc 127.0.0.1 8080
 ```
 
-Yang harus diamati:
+Observasi:
 
 - angka `5` dan `6` adalah ukuran chunk dalam hexadecimal
 - `0` berarti body selesai
@@ -519,7 +503,7 @@ Raw HTTP via telnet:
 telnet example.com 80
 ```
 
-Ketik request berikut, lalu tekan Enter dua kali:
+Request manual:
 
 ```text
 GET / HTTP/1.1
@@ -558,14 +542,14 @@ Raw HTTPS satu baris:
 printf 'GET / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n' | openssl s_client -connect example.com:443 -servername example.com -quiet
 ```
 
-Praktik langsung dengan HTTPS publik:
+Contoh HTTPS publik:
 
 ```bash
-# Membuka TLS ke Google dengan SNI, lalu kamu bisa mengetik HTTP request manual.
+# Membuka TLS ke Google dengan SNI untuk HTTP request manual.
 openssl s_client -connect www.google.com:443 -servername www.google.com -quiet
 ```
 
-Ketik manual:
+Request manual:
 
 ```text
 GET / HTTP/1.1
@@ -655,8 +639,6 @@ Header `Upgrade`:
 | `Connection: Upgrade` | menyatakan koneksi ingin upgrade protocol |
 | `Upgrade: websocket` | contoh upgrade ke WebSocket |
 
-Catatan penting:
-
 - hop-by-hop header harus dibersihkan di proxy boundary
 - forwarding header dari internet harus di-overwrite oleh proxy tepercaya
 - perbedaan handling header antar proxy/backend sering menjadi akar bug parsing
@@ -665,7 +647,7 @@ Catatan penting:
 
 ## 3.0 Headers, Cookies, and Auth
 
-**Praktik setelah bab ini:** ubah header, cookie, dan auth menjadi input yang bisa kamu kontrol dan amati.
+**Fokus teknis:** header, cookie, dan auth sebagai input yang bisa dikontrol dan diamati.
 
 ```bash
 # Mengirim header custom.
@@ -678,7 +660,7 @@ curl -v -c cookies.txt https://example.com/
 curl -v -b cookies.txt https://example.com/
 ```
 
-Catat: header yang dikirim, header yang dibalas, cookie scope, cookie attribute, dan apakah response berubah karena input header/cookie.
+Aspek teknis: header yang dikirim, header yang dibalas, cookie scope, cookie attribute, dan apakah response berubah karena input header/cookie.
 
 ### 3.1 Header Penting
 
@@ -733,7 +715,7 @@ Attribute penting:
 | `Domain` | scope domain |
 | `Expires` / `Max-Age` | umur cookie |
 
-Catatan:
+Keterangan:
 
 - Cookie adalah bearer token jika berisi session identifier.
 - Jika cookie dicuri, attacker bisa memakai session sampai expired/revoked.
@@ -758,7 +740,7 @@ Authorization: Bearer eyJ...
 
 Perbedaan:
 
-| Scheme | Catatan |
+| Scheme | Keterangan |
 |---|---|
 | Basic | harus lewat HTTPS, mudah direplay jika bocor |
 | Bearer | siapa pun yang memegang token bisa memakai |
@@ -843,8 +825,6 @@ Perbedaan penting:
 | `Content-Encoding` | transformasi encoding seperti gzip/br |
 | `Transfer-Encoding` | cara body dikirim di HTTP/1.1 |
 
-Catatan security/troubleshooting:
-
 - jika response ter-compress, capture payload tidak langsung terbaca sebagai text
 - cache harus memperhatikan `Vary`, terutama untuk `Accept-Encoding` dan `Origin`
 - mismatch `Content-Type` bisa menyebabkan browser menebak tipe jika `nosniff` tidak dipakai
@@ -874,7 +854,7 @@ hello
 ------abc--
 ```
 
-Hal yang harus diperhatikan:
+Aspek teknis:
 
 | Area | Risiko |
 |---|---|
@@ -890,7 +870,7 @@ Validasi upload sebaiknya memakai kombinasi allowlist extension, magic bytes bil
 
 ## 4.0 Caching, Proxy, and TLS
 
-**Praktik setelah bab ini:** uji cache, proxy header, TLS certificate, dan SNI sebagai satu jalur request.
+**Fokus teknis:** uji cache, proxy header, TLS certificate, dan SNI sebagai satu jalur request.
 
 ```bash
 # Melihat cache-related dan security header.
@@ -900,10 +880,10 @@ curl -I https://example.com/
 openssl s_client -connect example.com:443 -servername example.com
 
 # Memaksa hostname resolve ke IP tertentu tanpa mengubah DNS sistem.
-curl --resolve example.com:443:93.184.216.34 https://example.com/
+curl --resolve example.com:443:<server-ip> https://example.com/
 ```
 
-Catat: certificate subject/SAN, issuer, cache header, `Vary`, proxy header, dan apakah hostname/SNI/Host konsisten.
+Aspek teknis: certificate subject/SAN, issuer, cache header, `Vary`, proxy header, dan apakah hostname/SNI/Host konsisten.
 
 ### 4.1 Cache-Control, ETag, and Conditional Request
 
@@ -1005,7 +985,7 @@ echo | openssl s_client -connect example.com:443 -servername example.com 2>/dev/
 echo | openssl s_client -connect example.com:443 -servername example.com 2>/dev/null | openssl x509 -noout -subject -issuer
 ```
 
-Yang harus diamati:
+Observasi:
 
 - apakah certificate cocok dengan hostname
 - apakah chain certificate lengkap
@@ -1016,7 +996,7 @@ Yang harus diamati:
 
 ## 5.0 HTTP Versions
 
-**Praktik setelah bab ini:** bandingkan HTTP/1.1, HTTP/2, HTTP/3, dan ALPN negotiation.
+**Fokus teknis:** bandingkan HTTP/1.1, HTTP/2, HTTP/3, dan ALPN negotiation.
 
 ```bash
 # Memaksa HTTP/1.1.
@@ -1029,7 +1009,7 @@ curl --http2 -v https://example.com/
 openssl s_client -connect example.com:443 -servername example.com -alpn h2,http/1.1
 ```
 
-Catat: protocol yang dipilih, ALPN result, perbedaan header, dan apakah error terjadi di DNS, TCP, TLS, ALPN, atau HTTP.
+Aspek teknis: protocol yang dipilih, ALPN result, perbedaan header, dan apakah error terjadi di DNS, TCP, TLS, ALPN, atau HTTP.
 
 ### 5.1 HTTP/1.1
 
@@ -1116,7 +1096,7 @@ Contoh konsep HTTP/2:
 user-agent: curl/8.x
 ```
 
-Catatan: HTTP/2 bukan sekadar HTTP/1.1 yang dikompresi. Ia memakai binary framing, stream, dan aturan header berbeda. Saat ada proxy yang menerjemahkan HTTP/2 ke HTTP/1.1, pastikan mapping `:authority`, `Host`, path, dan header lain konsisten.
+Keterangan: HTTP/2 bukan sekadar HTTP/1.1 yang dikompresi. Ia memakai binary framing, stream, dan aturan header berbeda. Saat ada proxy yang menerjemahkan HTTP/2 ke HTTP/1.1, pastikan mapping `:authority`, `Host`, path, dan header lain konsisten.
 
 Praktik langsung:
 
@@ -1134,7 +1114,7 @@ curl --http3 -v https://example.com/
 openssl s_client -connect example.com:443 -servername example.com -alpn h2,http/1.1
 ```
 
-Yang harus dibandingkan:
+Perbandingan:
 
 - protocol yang benar-benar dipilih
 - apakah response header sama atau berbeda
@@ -1145,10 +1125,10 @@ Yang harus dibandingkan:
 
 ## 6.0 Web Security Notes
 
-**Praktik setelah bab ini:** baca web security dari parsing, trust boundary, cache, header, dan URL handling.
+**Fokus teknis:** baca web security dari parsing, trust boundary, cache, header, dan URL handling.
 
 ```bash
-# Tidak menormalisasi path tertentu saat testing di environment yang kamu punya izin.
+# Tidak menormalisasi path tertentu saat testing di environment berizin.
 curl --path-as-is -v 'http://localhost/a/../b'
 
 # Mengirim Host header custom ke endpoint lokal.
@@ -1158,7 +1138,7 @@ curl -v -H 'Host: example.com' http://127.0.0.1/
 curl -I -H 'X-Test: cache-probe' https://example.com/
 ```
 
-Catat: trust boundary, parser yang membaca request, header yang dipercaya, cache key, dan validasi defensive yang harus diterapkan.
+Aspek teknis: trust boundary, parser yang membaca request, header yang dipercaya, cache key, dan validasi defensive yang harus diterapkan.
 
 ### 6.1 Request Parsing and Trust Boundaries
 
@@ -1216,7 +1196,7 @@ curl -I https://example.com/
 curl -L -I -v https://example.com/
 ```
 
-Yang harus diamati:
+Observasi:
 
 - apakah `Strict-Transport-Security` hanya muncul di HTTPS
 - apakah ada `Content-Security-Policy`
@@ -1236,14 +1216,14 @@ Konsep defensif:
 | duplicate header | dua header serupa diparse beda |
 | obs-fold/whitespace | whitespace tidak standar diparse beda |
 
-Yang dipelajari:
+Poin teknis:
 
 - bagaimana request body dibatasi
 - bagaimana proxy dan backend membaca header
 - apakah koneksi persistent membuat request berikutnya terdampak
 - apakah server menormalisasi header secara konsisten
 
-Catatan: uji request smuggling hanya di lab atau target yang memang kamu punya izin. Payload yang salah bisa mengganggu user lain karena memengaruhi koneksi persistent.
+Keterangan: uji request smuggling hanya di lab atau target yang berada dalam scope izin. Payload yang salah bisa mengganggu user lain karena memengaruhi koneksi persistent.
 
 ### 6.4 SSRF, Host Header, and URL Confusion
 
@@ -1333,7 +1313,7 @@ curl --compressed -I https://example.com/
 curl -I -H 'X-Test: cache-probe' https://example.com/
 ```
 
-Yang harus diamati:
+Observasi:
 
 - apakah ada `Cache-Control`, `ETag`, `Age`, `Vary`, atau `X-Cache`
 - apakah response berubah ketika header request berubah

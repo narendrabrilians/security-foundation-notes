@@ -1,10 +1,6 @@
 # Windows Server
 
-Catatan Windows Server pribadi untuk belajar serius, praktik command, dan membangun fondasi administrasi Windows Server.
-
-Fokus halaman ini adalah Windows Server sebagai platform infrastruktur: bagaimana server dibangun, dikelola, diamankan, dimonitor, dan dipulihkan. Active Directory hanya dibahas sebagai jembatan karena pembahasan domain controller, Kerberos domain, Group Policy, replication, FSMO, trusts, dan AD security lebih rapi dibuat di `Active-Directory.md`.
-
-Referensi resmi yang berguna:
+Sumber resmi utama:
 
 - Windows Server documentation: https://learn.microsoft.com/en-us/windows-server/
 - Windows Server management: https://learn.microsoft.com/en-us/windows-server/administration/manage-windows-server
@@ -14,6 +10,7 @@ Referensi resmi yang berguna:
 - DNS Server: https://learn.microsoft.com/en-us/windows-server/networking/dns/dns-overview
 - DHCP Server: https://learn.microsoft.com/en-us/windows-server/networking/technologies/dhcp/dhcp-top
 - SMB features: https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-feature-descriptions
+- Detect, enable, and disable SMBv1, SMBv2, and SMBv3: https://learn.microsoft.com/en-us/windows-server/storage/file-server/troubleshoot/detect-enable-and-disable-smbv1-v2-v3
 - Hyper-V: https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/hyper-v-on-windows-server
 - Failover Clustering: https://learn.microsoft.com/en-us/windows-server/failover-clustering/clustering-requirements
 - Storage Spaces Direct: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/storage-spaces-direct-overview
@@ -35,7 +32,6 @@ Area utama:
 
 ## Daftar Isi
 
-- [0. Cara Pakai Catatan Ini](#0-cara-pakai-catatan-ini)
 - [1.0 Windows Server Fundamentals](#10-windows-server-fundamentals)
   - [1.1 Posisi Windows Server di Infrastruktur](#11-posisi-windows-server-di-infrastruktur)
   - [1.2 Editions, Installation Options, dan Licensing Concepts](#12-editions-installation-options-dan-licensing-concepts)
@@ -84,7 +80,7 @@ Area utama:
   - [8.4 Credential Protection and Remote Admin Security](#84-credential-protection-and-remote-admin-security)
   - [8.5 Logging, Auditing, and Detection](#85-logging-auditing-and-detection)
 - [9.0 Monitoring and Troubleshooting](#90-monitoring-and-troubleshooting)
-  - [9.1 Event Logs, Reliability, and Evidence](#91-event-logs-reliability-and-evidence)
+  - [9.1 Event Logs, Reliability, and Data Teknis](#91-event-logs-reliability-and-data-teknis)
   - [9.2 Performance Monitor and Counters](#92-performance-monitor-and-counters)
   - [9.3 Network Troubleshooting](#93-network-troubleshooting)
   - [9.4 Storage and File Server Troubleshooting](#94-storage-and-file-server-troubleshooting)
@@ -97,31 +93,9 @@ Area utama:
 
 ---
 
-## 0. Cara Pakai Catatan Ini
-
-Windows Server harus dipelajari sebagai sistem operasi sekaligus platform service. Di endpoint biasa, masalah sering berhenti di user, aplikasi, atau network client. Di server, satu konfigurasi bisa memengaruhi banyak user dan banyak sistem lain. Karena itu cara berpikirnya harus lebih disiplin:
-
-- server ini menyediakan service apa
-- siapa client yang memakai service itu
-- port, protocol, identity, dan permission apa yang terlibat
-- perubahan apa yang bisa memutus service
-- log apa yang membuktikan service sehat atau gagal
-- apakah masalah terjadi di OS, role, network, storage, authentication, atau dependency eksternal
-- apakah service harus tetap hidup saat maintenance, reboot, patching, atau node failure
-
-Pola belajar di file ini:
-
-- baca konsep singkat, lalu langsung jalankan command yang ada di section tersebut
-- sebelum melihat output atau membaca penjelasan lanjutan, prediksi dulu apa yang seharusnya terjadi
-- setelah command selesai, tulis observasi: output penting, gejala, layer/komponen yang terlibat, dan dugaan penyebab
-- ulangi praktik yang sama di hari berikutnya tanpa melihat catatan agar ingatan dibangun lewat recall
-- jalankan command hanya di sistem milik sendiri, lab pribadi, atau environment yang memang kamu diberi izin
-
----
-
 ## 1.0 Windows Server Fundamentals
 
-**Praktik setelah bab ini:** identifikasi role server, management plane, dan service dependency.
+**Fokus teknis:** identifikasi role server, management plane, dan service dependency.
 
 ```powershell
 # Tampilkan informasi OS server.
@@ -134,7 +108,7 @@ Get-WindowsFeature | Where-Object Installed
 Get-Service | Where-Object Status -eq Running
 ```
 
-Catat: role utama, feature pendukung, service dependency, port yang mungkin terbuka, dan cara admin mengelola server.
+Aspek teknis: role utama, feature pendukung, service dependency, port yang mungkin terbuka, dan cara admin mengelola server.
 
 ### 1.1 Posisi Windows Server di Infrastruktur
 
@@ -190,7 +164,7 @@ Get-WindowsFeature | Where-Object Installed
 
 Windows Server biasanya dipilih berdasarkan workload, hak virtualisasi, dan fitur enterprise yang diperlukan. Secara umum:
 
-| Edition | Cocok untuk | Catatan |
+| Edition | Cocok untuk | Keterangan |
 |---|---|---|
 | Standard | workload fisik/VM jumlah terbatas | umum untuk server kecil dan menengah |
 | Datacenter | virtualization density tinggi, S2D, software-defined datacenter | cocok untuk host Hyper-V besar dan cluster |
@@ -358,7 +332,7 @@ w32tm /query /status
 
 ## 2.0 Deployment and Lifecycle
 
-**Praktik setelah bab ini:** perlakukan build server sebagai state yang bisa diverifikasi.
+**Fokus teknis:** perlakukan build server sebagai state yang bisa diverifikasi.
 
 ```powershell
 # Melihat hotfix/patch yang terpasang.
@@ -371,7 +345,7 @@ w32tm /query /status
 Get-NetFirewallProfile
 ```
 
-Catat: patch level, waktu/NTP source, baseline firewall, perubahan terakhir, dan rollback plan sebelum perubahan besar.
+Aspek teknis: patch level, waktu/NTP source, baseline firewall, perubahan terakhir, dan rollback plan sebelum perubahan besar.
 
 ### 2.1 Installation, Initial Configuration, dan Golden Image
 
@@ -584,7 +558,7 @@ Runbook restore minimum:
 
 ## 3.0 Network Services
 
-**Praktik setelah bab ini:** uji DNS, DHCP, dan konektivitas service dari server side.
+**Fokus teknis:** uji DNS, DHCP, dan konektivitas service dari server side.
 
 ```powershell
 # Query DNS A record.
@@ -597,7 +571,7 @@ Resolve-DnsName _ldap._tcp.dc._msdcs.lab.local -Type SRV
 Test-NetConnection fs01.lab.local -Port 445
 ```
 
-Catat: DNS server yang menjawab, record yang ditemukan, port service, firewall path, dan dependency domain.
+Aspek teknis: DNS server yang menjawab, record yang ditemukan, port service, firewall path, dan dependency domain.
 
 ### 3.1 Static IP, NIC, Route, dan DNS Client
 
@@ -873,7 +847,7 @@ Get-WinEvent -LogName "System" -MaxEvents 50 | Where-Object ProviderName -like "
 
 ## 4.0 Storage and File Services
 
-**Praktik setelah bab ini:** buktikan storage, share, NTFS ACL, dan akses client.
+**Fokus teknis:** verifikasi storage, share, NTFS ACL, dan akses client.
 
 ```powershell
 # Tampilkan volume dan filesystem.
@@ -889,7 +863,7 @@ Get-SmbShareAccess
 Get-Acl D:\Shares | Format-List
 ```
 
-Catat: volume health, share path, share permission, NTFS permission, inheritance, dan perbedaan share ACL vs NTFS ACL.
+Aspek teknis: volume health, share path, share permission, NTFS permission, inheritance, dan perbedaan share ACL vs NTFS ACL.
 
 ### 4.1 Disk, Volume, NTFS, ReFS, dan Mount Point
 
@@ -1173,7 +1147,7 @@ Get-PhysicalDisk
 
 ## 5.0 Web, App, and Remote Desktop Services
 
-**Praktik setelah bab ini:** validasi web/RDS dari service, binding, certificate, dan port.
+**Fokus teknis:** validasi web/RDS dari service, binding, certificate, dan port.
 
 ```powershell
 # Test akses HTTP lokal.
@@ -1186,7 +1160,7 @@ Test-NetConnection localhost -Port 443
 Get-NetTCPConnection -State Listen
 ```
 
-Catat: status code, binding, certificate, listening port, firewall rule, dan log service yang membuktikan request diterima.
+Aspek teknis: status code, binding, certificate, listening port, firewall rule, dan log service yang menunjukkan request diterima.
 
 ### 5.1 IIS Architecture and Hosting
 
@@ -1347,7 +1321,7 @@ Get-PrinterDriver
 
 ## 6.0 Virtualization and Containers
 
-**Praktik setelah bab ini:** lihat VM sebagai compute, storage, network, checkpoint, dan isolation boundary.
+**Fokus teknis:** lihat VM sebagai compute, storage, network, checkpoint, dan isolation boundary.
 
 ```powershell
 # Tampilkan VM Hyper-V.
@@ -1360,7 +1334,7 @@ Get-VMSwitch
 Get-VMSnapshot -VMName *
 ```
 
-Catat: VM state, vSwitch type, network mapping, disk path, checkpoint risk, dan dependency storage/network.
+Aspek teknis: VM state, vSwitch type, network mapping, disk path, checkpoint risk, dan dependency storage/network.
 
 ### 6.1 Hyper-V Architecture
 
@@ -1378,8 +1352,6 @@ Komponen Hyper-V:
 | virtual switch | network switch virtual |
 | integration services | driver/service guest untuk integrasi |
 | checkpoint | point-in-time state untuk rollback lab |
-
-Catatan penting:
 
 - Hyper-V host sebaiknya tidak menjalankan role lain selain management/backup/monitoring
 - jangan pakai checkpoint sebagai backup
@@ -1520,7 +1492,7 @@ Get-Service | Where-Object Name -match "docker|container"
 
 ## 7.0 High Availability and Scale
 
-**Praktik setelah bab ini:** bedakan HA, backup, load balancing, dan disaster recovery.
+**Fokus teknis:** bedakan HA, backup, load balancing, dan disaster recovery.
 
 ```powershell
 # Tampilkan cluster jika feature tersedia.
@@ -1533,7 +1505,7 @@ Get-ClusterNode
 Get-ClusterResource
 ```
 
-Catat: quorum, node state, resource owner, failover behavior, dan bagian mana yang tetap single point of failure.
+Aspek teknis: quorum, node state, resource owner, failover behavior, dan bagian mana yang tetap single point of failure.
 
 ### 7.1 Failover Clustering Concepts
 
@@ -1722,7 +1694,7 @@ Test-NetConnection 10.10.10.81 -Port 443
 
 ## 8.0 Security and Hardening
 
-**Praktik setelah bab ini:** validasi hardening sebagai konfigurasi yang bisa dibuktikan.
+**Fokus teknis:** validasi hardening sebagai konfigurasi yang bisa diverifikasi.
 
 ```powershell
 # Tampilkan firewall profile.
@@ -1735,7 +1707,7 @@ Get-LocalGroupMember Administrators
 auditpol /get /category:*
 ```
 
-Catat: admin lokal, inbound exposure, audit coverage, service yang tidak perlu, dan kontrol yang bisa memutus operasi jika terlalu agresif.
+Aspek teknis: admin lokal, inbound exposure, audit coverage, service yang tidak perlu, dan kontrol yang bisa memutus operasi jika terlalu agresif.
 
 ### 8.1 Security Baseline and Local Policy
 
@@ -1953,7 +1925,7 @@ wevtutil sl Security /ms:1073741824
 
 ## 9.0 Monitoring and Troubleshooting
 
-**Praktik setelah bab ini:** gunakan log dan counter untuk membuktikan health server.
+**Fokus teknis:** gunakan log dan counter untuk menunjukkan health server.
 
 ```powershell
 # Ambil error System log terbaru.
@@ -1966,13 +1938,13 @@ Get-Counter "\Processor(_Total)\% Processor Time","\Memory\Available MBytes"
 Test-NetConnection server.lab.local -Port 445
 ```
 
-Catat: event ID, timestamp, resource pressure, service impact, dan command validasi setelah recovery.
+Aspek teknis: event ID, timestamp, resource pressure, service impact, dan command validasi setelah recovery.
 
-### 9.1 Event Logs, Reliability, and Evidence
+### 9.1 Event Logs, Reliability, and Data Teknis
 
-Troubleshooting server harus dimulai dari bukti. Jangan langsung reboot kecuali service impact membutuhkan tindakan cepat dan bukti sudah cukup atau bisa dikumpulkan.
+Troubleshooting server harus dimulai dari data. Jangan langsung reboot kecuali service impact membutuhkan tindakan cepat dan data sudah cukup atau bisa dikumpulkan.
 
-Urutan evidence:
+Urutan data teknis:
 
 1. scope masalah
 2. waktu mulai
@@ -2133,7 +2105,7 @@ Urutan repair umum:
 4. jalankan DISM restore health
 5. jalankan SFC
 6. review CBS log
-7. rollback update/driver jika terbukti penyebab
+7. rollback update/driver jika terlihat sebagai penyebab
 
 ```powershell
 # Cek health component store.
@@ -2156,7 +2128,7 @@ bcdedit /enum
 
 ## 10.0 Active Directory Bridge
 
-**Praktik setelah bab ini:** buktikan kapan masalah server sebenarnya masalah identity/DNS/domain.
+**Fokus teknis:** verifikasi kapan masalah server sebenarnya masalah identity/DNS/domain.
 
 ```powershell
 # Query domain DNS.
@@ -2169,7 +2141,7 @@ Resolve-DnsName _ldap._tcp.dc._msdcs.lab.local -Type SRV
 Test-ComputerSecureChannel
 ```
 
-Catat: DNS resolver, DC locator, secure channel state, time sync, dan apakah server memakai identity domain dengan benar.
+Aspek teknis: DNS resolver, DC locator, secure channel state, time sync, dan apakah server memakai identity domain dengan benar.
 
 ### 10.1 Member Server vs Domain Controller
 
